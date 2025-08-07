@@ -1,0 +1,83 @@
+<!-- Travel Connect Main Application Layout -->
+<div class="app-container">
+  <!-- Navigation Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <!-- Logo and Brand -->
+      <div class="brand">
+        <h1 class="logo">TravelConnect</h1>
+      </div>
+      
+      <!-- Navigation Menu -->
+      <nav class="nav-menu">
+        <a routerLink="/feed" routerLinkActive="active" class="nav-link">Feed</a>
+        <a routerLink="/explore" routerLinkActive="active" class="nav-link">Explore</a>
+        <a href="#" class="nav-link">Trips</a>
+        <a href="#" class="nav-link">Messages</a>
+      </nav>
+      
+      <!-- User Actions -->
+      <div class="user-actions">
+        <button class="notification-btn">
+          <span class="notification-icon">🔔</span>
+          <span class="notification-count">3</span>
+        </button>
+        <div class="user-profile">
+          <img src="https://via.placeholder.com/40" alt="User Avatar" class="avatar">
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Router outlet for different pages -->
+    <router-outlet></router-outlet>
+    
+    <!-- Temporary welcome content until routing is set up -->
+    <div class="welcome-section">
+      <div class="welcome-content">
+        <h2>Welcome to Travel Connect</h2>
+        <p class="welcome-subtitle">Connect with fellow travelers and plan your next adventure</p>
+        
+        <div class="feature-cards">
+          <div class="feature-card">
+            <div class="feature-icon">📸</div>
+            <h3>Share Stories</h3>
+            <p>Share your travel experiences with photos and stories</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">🗺️</div>
+            <h3>Plan Trips</h3>
+            <p>Collaborate with friends to plan amazing trips</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <h3>Connect</h3>
+            <p>Message and connect with travelers worldwide</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Explore</h3>
+            <p>Discover trending destinations and hidden gems</p>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="primary-btn">Start Exploring</button>
+          <button class="secondary-btn">Create Your First Post</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>&copy; 2025 Travel Connect. Made with ❤️ for travelers worldwide.</p>
+    </div>
+  </footer>
+</div>

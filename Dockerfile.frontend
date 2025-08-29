@@ -1,38 +1,37 @@
-# Use a Node image that includes a complete build environment
-FROM node:16 AS builder
+# Multi-stage build for Angular frontend
+FROM node:20-alpine as build
 
-# Set working directory
 WORKDIR /app
-
-# Increase Node memory limit
-ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with legacy peer deps flag to avoid Angular compatibility issues
-RUN npm install --legacy-peer-deps
+# Install dependencies
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
 
-# Modify angular.json to remove budgets completely
-RUN sed -i 's/"budgets": \[\([^]]*\)\]/"budgets": []/' angular.json
-
-# Build with production configuration
+# Build the Angular app for production
 RUN npm run build
 
-# Production stage
-FROM nginx:stable
+# Production stage with Nginx
+FROM nginx:alpine
 
-# Copy built application from builder stage (try both possible paths)
-COPY --from=builder /app/dist/ /usr/share/nginx/html/
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built Angular app from build stage
+COPY --from=build /app/dist/travelconnect/browser /usr/share/nginx/html
+
+# Copy uploads directory for static assets
+COPY --from=build /app/backend/uploads /usr/share/nginx/html/uploads
+
+# Create directory for nginx pid
+RUN mkdir -p /var/run/nginx
 
 # Expose port 80
 EXPOSE 80
 
-# Start nginx
+# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

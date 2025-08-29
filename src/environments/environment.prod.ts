@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  backendUrl: 'https://api.travelconnect.com', // Placeholder for production URL
+  backendUrl: '/api', // Uses nginx proxy to backend:3002
   googleMapsApiKey: 'AIzaSyDJsSuh2WCkVW63FfVpfKXLOvqlXVTi7dI'
 };

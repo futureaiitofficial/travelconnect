@@ -1,287 +1,243 @@
 # TravelConnect Portainer Deployment Guide
 
-## 🐳 Overview
+## Overview
 
-This guide explains how to deploy the TravelConnect application using Portainer, a powerful Docker management interface. The application consists of:
+This guide shows how to deploy TravelConnect on AWS EC2 using Portainer with your existing MongoDB Atlas database.
 
-- **Frontend**: Angular application served by Nginx
-- **Backend**: Node.js/Express API
-- **Database**: MongoDB Atlas (Cloud Database)
+## Current Setup Analysis
 
-## 📋 Prerequisites
+✅ **Your Existing Configuration:**
+- **Database**: MongoDB Atlas (cloud) - `mongodb+srv://lahari:***@travelconnect.jovulzu.mongodb.net/travelconnect`
+- **Backend Port**: 3002 (not 3000)
+- **Environment**: Already configured in `backend/.env`
+- **Google Maps API**: Already configured
+- **JWT**: Already configured with refresh tokens
 
-- Portainer CE/EE installed and running
-- Docker Engine 20.10+
-- At least 1GB RAM available
-- Ports 3002 and 4200 available
-- MongoDB Atlas cluster set up
-- Git access to the repository
+## Deployment Methods
 
-## 🚀 Quick Deployment in Portainer
+### Method 1: Git Repository Deployment (Recommended)
 
-### Step 1: Access Portainer
-1. Open your Portainer web interface (usually `http://your-server:9000`)
-2. Login with your credentials
-3. Navigate to your local Docker environment
+This method builds images directly from your Git repository in Portainer.
 
-### Step 2: Create a New Stack
-1. Click on **"Stacks"** in the left sidebar
-2. Click **"Add stack"**
-3. Give your stack a name: `travelconnect`
-4. Choose **"Repository"** as the build method
-
-### Step 3: Configure Git Repository Settings
-
-#### Repository Configuration
-- **Repository URL**: `https://github.com/futureaiitofficial/travelconnect.git`
-- **Repository Reference**: `main`
-- **Compose Path**: `docker-compose.yml`
-
-#### Environment Variables
-Add these environment variables in the Portainer stack configuration:
-
-**Required Variables:**
+#### Step 1: Access Portainer
 ```
-MONGODB_URI=mongodb+srv://your-username:your-password@your-cluster.mongodb.net/travelconnect?retryWrites=true&w=majority
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+https://your-ec2-ip:9443
 ```
 
-**Optional Variables:**
+#### Step 2: Create New Stack from Git
+1. Go to **Stacks** → **Add Stack**
+2. Choose **Git Repository**
+3. **Repository URL**: `https://github.com/your-username/your-repo.git`
+4. **Reference**: `refs/heads/main` (or your branch)
+5. **Compose path**: `portainer-git-stack.yml`
+
+#### Step 3: Set Environment Variables
+In the **Environment variables** section, add:
+
+```env
+# Required - MongoDB Atlas
+MONGODB_URI=mongodb+srv://lahari:9R8En3qh7Csjd8Ve@travelconnect.jovulzu.mongodb.net/travelconnect?retryWrites=true&w=majority&appName=travelconnect
+
+# Required - JWT Configuration
+JWT_SECRET=travelconnect_super_secret_jwt_key_2024
+JWT_REFRESH_SECRET=travelconnect_super_secret_refresh_key_2024
+
+# Required - Google Maps
+GOOGLE_MAPS_API_KEY=AIzaSyAR6BJ14sWn5T9nn8Hy0C9XyqLUR7vF06k
+
+# Required - CORS (Replace with your domain/IP)
+FRONTEND_URL=http://your-ec2-public-ip
+SOCKET_CORS_ORIGIN=http://your-ec2-public-ip
+
+# Optional (defaults provided)
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=./uploads
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
 ```
-NODE_ENV=production
-CORS_ORIGIN=http://localhost:4200,http://frontend:80
-FRONTEND_URL=http://localhost:4200
-BACKEND_PORT=3002
-FRONTEND_PORT=4200
-PORT=3002
-```
 
-### Step 4: Deploy the Stack
-1. Click **"Deploy the stack"**
-2. Wait for the build process to complete (this may take 5-10 minutes)
-3. Monitor the deployment in the **"Events"** tab
+#### Step 4: Deploy
+1. Click **Deploy the stack**
+2. Portainer will:
+   - Clone your repository
+   - Build Docker images
+   - Start containers
+   - Set up networking
 
-## 🔧 Configuration
+### Method 2: Pre-built Images
 
-### Environment Variables Explained
+If you prefer to build images locally first:
 
-#### Required Variables
-- **`MONGODB_URI`**: Your MongoDB Atlas connection string
-  - Format: `mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority`
-  - Get this from your MongoDB Atlas dashboard
-
-- **`JWT_SECRET`**: Secret key for JWT token generation
-  - Use a strong, random string
-  - Example: `my-super-secret-jwt-key-2024-production`
-
-#### Optional Variables
-- **`NODE_ENV`**: Environment mode (default: `production`)
-- **`CORS_ORIGIN`**: Allowed origins for CORS (default: `http://localhost:4200,http://frontend:80`)
-- **`FRONTEND_URL`**: Frontend URL for backend configuration (default: `http://localhost:4200`)
-- **`BACKEND_PORT`**: Port for backend API (default: `3002`)
-- **`FRONTEND_PORT`**: Port for frontend application (default: `4200`)
-- **`PORT`**: Internal backend port (default: `3002`)
-
-### Port Configuration
-Default ports (can be changed via environment variables):
-- **4200**: Frontend (Nginx)
-- **3002**: Backend API
-
-## 📊 Monitoring in Portainer
-
-### Stack Overview
-- Navigate to **"Stacks"** → **"travelconnect"**
-- View overall stack status and health
-
-### Container Management
-- Click on individual containers to:
-  - View logs in real-time
-  - Access container console
-  - Restart containers
-  - View resource usage
-
-### Health Checks
-Both services include health checks that Portainer will monitor:
-- **Backend**: `/api/health` endpoint
-- **Frontend**: HTTP response check
-
-## 🔄 Updates and Maintenance
-
-### Update Application
-1. **Automatic Updates**: When you push changes to the `main` branch, Portainer can automatically pull the latest code
-2. **Manual Updates**: 
-   - Go to **"Stacks"** → **"travelconnect"**
-   - Click **"Editor"**
-   - Update the configuration if needed
-   - Click **"Update the stack"**
-
-### Backup and Restore
-
-#### Database Backup (MongoDB Atlas)
-- Use MongoDB Atlas built-in backup features
-- Or use MongoDB Compass to export data
-
-#### Upload Files Backup
+#### Step 1: Build Images
 ```bash
-# Backup uploads
-docker cp travelconnect-backend:/app/uploads ./backup-uploads
-
-# Restore uploads
-docker cp ./backup-uploads travelconnect-backend:/app/uploads
+# On your local machine or build server
+git clone your-repo
+cd travelconnect
+./build-images.sh
+docker push travelconnect-backend:latest
+docker push travelconnect-frontend:latest
 ```
 
-## 🔒 Security Considerations
+#### Step 2: Deploy in Portainer
+1. Use `portainer-stack.yml` (not git version)
+2. Set same environment variables as above
 
-### 1. Environment Variables
-- Use strong JWT secrets
-- Keep MongoDB Atlas credentials secure
-- Update CORS origins for your domain
+## Architecture After Deployment
 
-### 2. Network Security
-- Use reverse proxy (Nginx Proxy Manager) for SSL
-- Configure firewall rules
-- Restrict access to backend API
-
-### 3. Data Persistence
-- Upload files are persisted in Docker volumes
-- Database is managed by MongoDB Atlas
-- Regular backups recommended
-
-## 🔗 Integration with Nginx Proxy Manager
-
-### Frontend Proxy Configuration
-1. **Domain**: your-domain.com
-2. **Forward Hostname/IP**: localhost
-3. **Forward Port**: 4200
-4. **SSL**: Enable Let's Encrypt
-5. **Force SSL**: Enable
-6. **WebSocket Support**: Enable
-
-### Backend Proxy Configuration
-1. **Domain**: api.your-domain.com
-2. **Forward Hostname/IP**: localhost
-3. **Forward Port**: 3002
-4. **SSL**: Enable Let's Encrypt
-5. **Force SSL**: Enable
-
-### Environment Updates
-After setting up the proxy, update the stack environment variables:
 ```
-CORS_ORIGIN=https://your-domain.com
-FRONTEND_URL=https://your-domain.com
-SOCKET_CORS_ORIGIN=https://your-domain.com
+┌─────────────────────────────────────────────────────────────┐
+│                        AWS EC2 Instance                    │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │                   Portainer :9443                  │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │              Docker Containers                      │    │
+│  │                                                     │    │
+│  │  ┌─────────────┐           ┌─────────────┐          │    │
+│  │  │    Nginx    │           │   Node.js   │          │    │
+│  │  │  (Frontend) │ ──────────│  (Backend)  │          │    │
+│  │  │   Port 80   │           │  Port 3002  │          │    │
+│  │  └─────────────┘           └─────────────┘          │    │
+│  │                                   │                 │    │
+│  └───────────────────────────────────┼─────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                            ┌─────────────────┐
+                            │   MongoDB Atlas │
+                            │   (Cloud DB)    │
+                            └─────────────────┘
 ```
 
-## 🚨 Troubleshooting
+## Key Differences from Generic Setup
 
-### Common Issues in Portainer
+❌ **Removed**: MongoDB container (using Atlas)
+✅ **Updated**: Port 3002 for backend
+✅ **Configured**: Your existing environment variables
+✅ **Optimized**: For your Atlas connection string
 
-#### 1. Build Failures
-- **Check logs**: Click on the failing container → **"Logs"**
-- **Common causes**:
-  - Network connectivity issues
-  - Insufficient disk space
-  - Memory constraints
+## Verification Steps
 
-#### 2. Container Won't Start
-- **Check container logs**: Container → **"Logs"**
-- **Check resource usage**: Container → **"Stats"**
-- **Verify environment variables**: Stack → **"Editor"**
+After deployment, verify:
 
-#### 3. Database Connection Issues
-- **Verify MongoDB Atlas connection string**
-- **Check network connectivity**
-- **Verify MongoDB Atlas IP whitelist**
+### 1. Check Container Status
+In Portainer → Containers:
+- ✅ `travelconnect-backend-prod` - Running
+- ✅ `travelconnect-frontend-prod` - Running
 
-#### 4. Frontend Build Issues
-- **Check build logs**: `travelconnect-frontend` container → **"Logs"**
-- **Verify source code**: Ensure all files are present
-
-### Useful Portainer Commands
-
-#### View Container Logs
+### 2. Test Endpoints
 ```bash
-# In Portainer: Container → Logs
-# Or via SSH:
-docker logs travelconnect-backend
-docker logs travelconnect-frontend
+# Frontend
+curl http://your-ec2-ip
+
+# Backend API Health
+curl http://your-ec2-ip:3002/api/health
+
+# Through Nginx proxy
+curl http://your-ec2-ip/api/health
 ```
 
-#### Access Container Console
+### 3. Check Logs
+In Portainer → Containers → [container] → Logs:
+- Backend should show: "Server is running on port 3002"
+- No MongoDB connection errors
+
+## Environment Variables Reference
+
+### Required Variables
+```env
+MONGODB_URI=mongodb+srv://lahari:***@travelconnect.jovulzu.mongodb.net/travelconnect?retryWrites=true&w=majority&appName=travelconnect
+JWT_SECRET=travelconnect_super_secret_jwt_key_2024
+JWT_REFRESH_SECRET=travelconnect_super_secret_refresh_key_2024
+GOOGLE_MAPS_API_KEY=AIzaSyAR6BJ14sWn5T9nn8Hy0C9XyqLUR7vF06k
+FRONTEND_URL=http://your-ec2-public-ip
+SOCKET_CORS_ORIGIN=http://your-ec2-public-ip
+```
+
+### Optional Variables (with defaults)
+```env
+JWT_EXPIRES_IN=7d
+JWT_REFRESH_EXPIRES_IN=30d
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=./uploads
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**1. Backend can't connect to MongoDB**
+- ✅ Check `MONGODB_URI` is correct
+- ✅ Verify Atlas IP whitelist includes 0.0.0.0/0
+- ✅ Check Atlas user permissions
+
+**2. Frontend shows 500 errors**
+- ✅ Check backend container logs
+- ✅ Verify backend is running on port 3002
+- ✅ Check Nginx proxy configuration
+
+**3. CORS errors**
+- ✅ Update `FRONTEND_URL` with your domain/IP
+- ✅ Update `SOCKET_CORS_ORIGIN` with your domain/IP
+
+### Debug Commands
+
 ```bash
-# In Portainer: Container → Console
-# Or via SSH:
-docker exec -it travelconnect-backend sh
+# SSH into EC2 instance
+ssh -i your-key.pem ec2-user@your-ec2-ip
+
+# Check containers
+docker ps
+
+# View logs
+docker logs travelconnect-backend-prod
+docker logs travelconnect-frontend-prod
+
+# Test backend directly
+docker exec -it travelconnect-backend-prod curl http://localhost:3002/api/health
+
+# Check environment variables
+docker exec -it travelconnect-backend-prod env | grep MONGODB_URI
 ```
 
-#### Check Service Health
+## Updates and Maintenance
+
+### Update from Git
+In Portainer:
+1. Go to **Stacks** → Your Stack
+2. Click **Editor**
+3. Click **Pull and redeploy**
+
+### Manual Update
 ```bash
-# Test API health
-curl http://localhost:3002/api/health
+# Pull latest code
+git pull origin main
 
-# Test frontend
-curl http://localhost:4200
+# Rebuild and restart
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
-## 📈 Production Recommendations
+## Security Notes
 
-### 1. Resource Allocation
-- **Backend**: 512MB RAM minimum
-- **Frontend**: 256MB RAM minimum
-- **Total**: 1GB+ RAM recommended
+1. **Environment Variables**: Never commit real credentials to Git
+2. **Atlas Access**: Keep IP whitelist restrictive if possible
+3. **JWT Secrets**: Use strong, unique secrets
+4. **HTTPS**: Consider adding SSL certificates for production
 
-### 2. Monitoring Setup
-- Use Portainer's built-in monitoring
-- Set up resource alerts
-- Monitor disk usage for uploads
+## Success Criteria
 
-### 3. Backup Strategy
-- MongoDB Atlas automatic backups
-- Volume backups for uploads
-- Configuration backups
-
-### 4. Security Enhancements
-- Use Docker secrets for sensitive data
-- Implement network segmentation
-- Regular security updates
-
-## 🆘 Support
-
-### Getting Help
-1. **Check Portainer logs** first
-2. **Verify configuration** in stack editor
-3. **Check resource usage** in container stats
-4. **Review this documentation**
-
-### Useful Links
-- **Portainer Documentation**: https://docs.portainer.io/
-- **Docker Documentation**: https://docs.docker.com/
-- **MongoDB Atlas Documentation**: https://docs.atlas.mongodb.com/
+✅ Frontend accessible at `http://your-ec2-ip`
+✅ Backend API at `http://your-ec2-ip:3002/api/health`
+✅ No MongoDB connection errors in logs
+✅ File uploads working (check `/uploads/` endpoint)
+✅ Real-time features working (Socket.IO)
 
 ---
 
-## 🎯 Quick Reference
-
-### Service URLs
-- **Frontend**: http://localhost:4200
-- **Backend API**: http://localhost:3002
-
-### Container Names
-- `travelconnect-frontend`
-- `travelconnect-backend`
-
-### Volume Names
-- `travelconnect_backend_uploads`
-
-### Network Name
-- `travelconnect_travelconnect-network`
-
-### Required Environment Variables
-```
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/travelconnect?retryWrites=true&w=majority
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-```
-
----
-
-**Happy Deploying with Portainer! 🚀**
+🚀 **Your TravelConnect app is now running with MongoDB Atlas on AWS EC2!**

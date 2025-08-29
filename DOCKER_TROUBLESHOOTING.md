@@ -75,7 +75,16 @@ RUN npm ci --retry=3 --timeout=60000
 docker system prune -a
 ```
 
-### 5. File Permission Issues
+### 5. ❌ Nginx Configuration Error
+**Error:** 
+```
+invalid value "must-revalidate" in /etc/nginx/nginx.conf:28
+nginx: [emerg] invalid value "must-revalidate"
+```
+**Root Cause:** Invalid value in `gzip_proxied` directive
+**Solution:** ✅ Fixed - Removed invalid `must-revalidate` option
+
+### 6. File Permission Issues
 **Error:** Permission denied during build
 **Solution:** Check file permissions in repository
 

@@ -33,11 +33,12 @@ services:
 
   # Frontend Application
   frontend:
-    image: nginx:stable
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: travelconnect-frontend
     restart: unless-stopped
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - frontend_build:/usr/share/nginx/html
     ports:
       - "${FRONTEND_PORT:-4200}:80"

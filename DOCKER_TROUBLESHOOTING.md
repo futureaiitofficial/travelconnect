@@ -49,25 +49,33 @@ FROM nginx:alpine
 
 ## 🔧 Other Common Docker Build Issues
 
-### 1. Memory Issues
+### 1. ❌ uploads Directory Not Found
+**Error:** 
+```
+failed to compute cache key: "/app/backend/uploads": not found
+```
+**Root Cause:** Trying to copy uploads directory that doesn't exist in Git
+**Solution:** ✅ Fixed - Create directory instead of copying, use volumes for uploads
+
+### 2. Memory Issues
 **Error:** Build process killed or out of memory
 **Solution:** Increase memory limit (already added above)
 
-### 2. Network Issues
+### 3. Network Issues
 **Error:** npm install fails with network timeouts
 **Solution:** Add retry logic:
 ```dockerfile
 RUN npm ci --retry=3 --timeout=60000
 ```
 
-### 3. Cache Issues
+### 4. Cache Issues
 **Error:** Stale dependencies or build artifacts
 **Solution:** Clear Docker build cache:
 ```bash
 docker system prune -a
 ```
 
-### 4. File Permission Issues
+### 5. File Permission Issues
 **Error:** Permission denied during build
 **Solution:** Check file permissions in repository
 

@@ -1,29 +1,6 @@
 version: '3.8'
 
 services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: travelconnect-mongodb
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: travelconnect123
-      MONGO_INITDB_DATABASE: travelconnect
-    volumes:
-      - mongodb_data:/data/db
-      - ./backend/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-    ports:
-      - "27017:27017"
-    networks:
-      - travelconnect-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
   # Backend API
   backend:
     build:
@@ -32,18 +9,16 @@ services:
     container_name: travelconnect-backend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      MONGODB_URI: mongodb://admin:travelconnect123@mongodb:27017/travelconnect?authSource=admin
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
-      PORT: 3002
-      CORS_ORIGIN: http://localhost:4200,http://frontend:80
+      NODE_ENV: ${NODE_ENV:-production}
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: ${PORT:-3002}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4200,http://frontend:80}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
     volumes:
       - backend_uploads:/app/uploads
     ports:
-      - "3002:3002"
-    depends_on:
-      mongodb:
-        condition: service_healthy
+      - "${BACKEND_PORT:-3002}:3002"
     networks:
       - travelconnect-network
     healthcheck:
@@ -61,9 +36,9 @@ services:
     container_name: travelconnect-frontend
     restart: unless-stopped
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
     ports:
-      - "4200:80"
+      - "${FRONTEND_PORT:-4200}:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -77,8 +52,6 @@ services:
       start_period: 30s
 
 volumes:
-  mongodb_data:
-    driver: local
   backend_uploads:
     driver: local
 

@@ -6,15 +6,16 @@ This guide explains how to deploy the TravelConnect application using Portainer,
 
 - **Frontend**: Angular application served by Nginx
 - **Backend**: Node.js/Express API
-- **Database**: MongoDB
+- **Database**: MongoDB Atlas (Cloud Database)
 
 ## 📋 Prerequisites
 
 - Portainer CE/EE installed and running
 - Docker Engine 20.10+
-- At least 2GB RAM available
-- Ports 27017, 3002, and 4200 available
-- Git access to clone the repository
+- At least 1GB RAM available
+- Ports 3002 and 4200 available
+- MongoDB Atlas cluster set up
+- Git access to the repository
 
 ## 🚀 Quick Deployment in Portainer
 
@@ -27,99 +28,32 @@ This guide explains how to deploy the TravelConnect application using Portainer,
 1. Click on **"Stacks"** in the left sidebar
 2. Click **"Add stack"**
 3. Give your stack a name: `travelconnect`
-4. Choose **"Web editor"** as the build method
+4. Choose **"Repository"** as the build method
 
-### Step 3: Copy Docker Compose Configuration
-Copy and paste the following Docker Compose configuration into the web editor:
+### Step 3: Configure Git Repository Settings
 
-```yaml
-version: '3.8'
+#### Repository Configuration
+- **Repository URL**: `https://github.com/futureaiitofficial/travelconnect.git`
+- **Repository Reference**: `main`
+- **Compose Path**: `docker-compose.yml`
 
-services:
-  # MongoDB Database
-  mongodb:
-    image: mongo:7.0
-    container_name: travelconnect-mongodb
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: travelconnect123
-      MONGO_INITDB_DATABASE: travelconnect
-    volumes:
-      - mongodb_data:/data/db
-      - ./backend/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-    ports:
-      - "27017:27017"
-    networks:
-      - travelconnect-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+#### Environment Variables
+Add these environment variables in the Portainer stack configuration:
 
-  # Backend API
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: travelconnect-backend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      MONGODB_URI: mongodb://admin:travelconnect123@mongodb:27017/travelconnect?authSource=admin
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
-      PORT: 3002
-      CORS_ORIGIN: http://localhost:4200,http://frontend:80
-    volumes:
-      - backend_uploads:/app/uploads
-    ports:
-      - "3002:3002"
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - travelconnect-network
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3002/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+**Required Variables:**
+```
+MONGODB_URI=mongodb+srv://your-username:your-password@your-cluster.mongodb.net/travelconnect?retryWrites=true&w=majority
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+```
 
-  # Frontend Application
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    container_name: travelconnect-frontend
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-    ports:
-      - "4200:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - travelconnect-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-volumes:
-  mongodb_data:
-    driver: local
-  backend_uploads:
-    driver: local
-
-networks:
-  travelconnect-network:
-    driver: bridge
+**Optional Variables:**
+```
+NODE_ENV=production
+CORS_ORIGIN=http://localhost:4200,http://frontend:80
+FRONTEND_URL=http://localhost:4200
+BACKEND_PORT=3002
+FRONTEND_PORT=4200
+PORT=3002
 ```
 
 ### Step 4: Deploy the Stack
@@ -127,59 +61,31 @@ networks:
 2. Wait for the build process to complete (this may take 5-10 minutes)
 3. Monitor the deployment in the **"Events"** tab
 
-## 📁 Repository Setup
-
-### Option 1: Clone Repository to Server
-```bash
-# SSH into your server
-ssh user@your-server
-
-# Clone the repository
-git clone https://github.com/futureaiitofficial/travelconnect.git
-cd travelconnect
-
-# Make sure you're in the correct directory
-ls -la
-# Should show: docker-compose.yml, Dockerfile.frontend, backend/, src/, etc.
-```
-
-### Option 2: Use Git Repository in Portainer
-1. In the stack configuration, change the build context to use Git:
-```yaml
-backend:
-  build:
-    context: https://github.com/futureaiitofficial/travelconnect.git#main
-    dockerfile: backend/Dockerfile
-frontend:
-  build:
-    context: https://github.com/futureaiitofficial/travelconnect.git#main
-    dockerfile: Dockerfile.frontend
-```
-
 ## 🔧 Configuration
 
-### Environment Variables
-You can customize the environment variables in the Portainer stack configuration:
+### Environment Variables Explained
 
-#### Security Variables (Important to Change)
-```yaml
-environment:
-  JWT_SECRET: your-very-secure-jwt-secret-key-here
-  MONGO_INITDB_ROOT_PASSWORD: your-secure-mongodb-password
-```
+#### Required Variables
+- **`MONGODB_URI`**: Your MongoDB Atlas connection string
+  - Format: `mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority`
+  - Get this from your MongoDB Atlas dashboard
 
-#### CORS Configuration
-```yaml
-environment:
-  CORS_ORIGIN: https://your-domain.com,http://your-domain.com
-  FRONTEND_URL: https://your-domain.com
-```
+- **`JWT_SECRET`**: Secret key for JWT token generation
+  - Use a strong, random string
+  - Example: `my-super-secret-jwt-key-2024-production`
+
+#### Optional Variables
+- **`NODE_ENV`**: Environment mode (default: `production`)
+- **`CORS_ORIGIN`**: Allowed origins for CORS (default: `http://localhost:4200,http://frontend:80`)
+- **`FRONTEND_URL`**: Frontend URL for backend configuration (default: `http://localhost:4200`)
+- **`BACKEND_PORT`**: Port for backend API (default: `3002`)
+- **`FRONTEND_PORT`**: Port for frontend application (default: `4200`)
+- **`PORT`**: Internal backend port (default: `3002`)
 
 ### Port Configuration
-Default ports (can be changed in Portainer):
+Default ports (can be changed via environment variables):
 - **4200**: Frontend (Nginx)
 - **3002**: Backend API
-- **27017**: MongoDB
 
 ## 📊 Monitoring in Portainer
 
@@ -195,21 +101,15 @@ Default ports (can be changed in Portainer):
   - View resource usage
 
 ### Health Checks
-All services include health checks that Portainer will monitor:
+Both services include health checks that Portainer will monitor:
 - **Backend**: `/api/health` endpoint
 - **Frontend**: HTTP response check
-- **MongoDB**: Database connectivity check
 
 ## 🔄 Updates and Maintenance
 
 ### Update Application
-1. **Pull Latest Code**:
-   ```bash
-   cd /path/to/travelconnect
-   git pull origin main
-   ```
-
-2. **Redeploy in Portainer**:
+1. **Automatic Updates**: When you push changes to the `main` branch, Portainer can automatically pull the latest code
+2. **Manual Updates**: 
    - Go to **"Stacks"** → **"travelconnect"**
    - Click **"Editor"**
    - Update the configuration if needed
@@ -217,39 +117,34 @@ All services include health checks that Portainer will monitor:
 
 ### Backup and Restore
 
-#### Database Backup
+#### Database Backup (MongoDB Atlas)
+- Use MongoDB Atlas built-in backup features
+- Or use MongoDB Compass to export data
+
+#### Upload Files Backup
 ```bash
-# Create backup
-docker exec travelconnect-mongodb mongodump --out /backup
+# Backup uploads
+docker cp travelconnect-backend:/app/uploads ./backup-uploads
 
-# Copy backup from container
-docker cp travelconnect-mongodb:/backup ./backup
-```
-
-#### Database Restore
-```bash
-# Copy backup to container
-docker cp ./backup travelconnect-mongodb:/backup
-
-# Restore database
-docker exec travelconnect-mongodb mongorestore /backup
+# Restore uploads
+docker cp ./backup-uploads travelconnect-backend:/app/uploads
 ```
 
 ## 🔒 Security Considerations
 
 ### 1. Environment Variables
-- Change default passwords in production
 - Use strong JWT secrets
+- Keep MongoDB Atlas credentials secure
 - Update CORS origins for your domain
 
 ### 2. Network Security
 - Use reverse proxy (Nginx Proxy Manager) for SSL
-- Restrict MongoDB access to internal network
 - Configure firewall rules
+- Restrict access to backend API
 
 ### 3. Data Persistence
-- MongoDB data is persisted in Docker volumes
-- Upload files are persisted in volumes
+- Upload files are persisted in Docker volumes
+- Database is managed by MongoDB Atlas
 - Regular backups recommended
 
 ## 🔗 Integration with Nginx Proxy Manager
@@ -271,11 +166,10 @@ docker exec travelconnect-mongodb mongorestore /backup
 
 ### Environment Updates
 After setting up the proxy, update the stack environment variables:
-```yaml
-environment:
-  CORS_ORIGIN: https://your-domain.com
-  FRONTEND_URL: https://your-domain.com
-  SOCKET_CORS_ORIGIN: https://your-domain.com
+```
+CORS_ORIGIN=https://your-domain.com
+FRONTEND_URL=https://your-domain.com
+SOCKET_CORS_ORIGIN=https://your-domain.com
 ```
 
 ## 🚨 Troubleshooting
@@ -295,8 +189,9 @@ environment:
 - **Verify environment variables**: Stack → **"Editor"**
 
 #### 3. Database Connection Issues
-- **Check MongoDB logs**: `travelconnect-mongodb` container → **"Logs"**
-- **Verify network connectivity**: Check if containers can communicate
+- **Verify MongoDB Atlas connection string**
+- **Check network connectivity**
+- **Verify MongoDB Atlas IP whitelist**
 
 #### 4. Frontend Build Issues
 - **Check build logs**: `travelconnect-frontend` container → **"Logs"**
@@ -310,7 +205,6 @@ environment:
 # Or via SSH:
 docker logs travelconnect-backend
 docker logs travelconnect-frontend
-docker logs travelconnect-mongodb
 ```
 
 #### Access Container Console
@@ -318,7 +212,6 @@ docker logs travelconnect-mongodb
 # In Portainer: Container → Console
 # Or via SSH:
 docker exec -it travelconnect-backend sh
-docker exec -it travelconnect-mongodb mongosh
 ```
 
 #### Check Service Health
@@ -328,18 +221,14 @@ curl http://localhost:3002/api/health
 
 # Test frontend
 curl http://localhost:4200
-
-# Test MongoDB
-docker exec travelconnect-mongodb mongosh --eval "db.adminCommand('ping')"
 ```
 
 ## 📈 Production Recommendations
 
 ### 1. Resource Allocation
-- **MongoDB**: 1GB RAM minimum
 - **Backend**: 512MB RAM minimum
 - **Frontend**: 256MB RAM minimum
-- **Total**: 2GB+ RAM recommended
+- **Total**: 1GB+ RAM recommended
 
 ### 2. Monitoring Setup
 - Use Portainer's built-in monitoring
@@ -347,7 +236,7 @@ docker exec travelconnect-mongodb mongosh --eval "db.adminCommand('ping')"
 - Monitor disk usage for uploads
 
 ### 3. Backup Strategy
-- Regular MongoDB backups
+- MongoDB Atlas automatic backups
 - Volume backups for uploads
 - Configuration backups
 
@@ -367,7 +256,7 @@ docker exec travelconnect-mongodb mongosh --eval "db.adminCommand('ping')"
 ### Useful Links
 - **Portainer Documentation**: https://docs.portainer.io/
 - **Docker Documentation**: https://docs.docker.com/
-- **MongoDB Documentation**: https://docs.mongodb.com/
+- **MongoDB Atlas Documentation**: https://docs.atlas.mongodb.com/
 
 ---
 
@@ -376,19 +265,22 @@ docker exec travelconnect-mongodb mongosh --eval "db.adminCommand('ping')"
 ### Service URLs
 - **Frontend**: http://localhost:4200
 - **Backend API**: http://localhost:3002
-- **MongoDB**: localhost:27017
 
 ### Container Names
 - `travelconnect-frontend`
 - `travelconnect-backend`
-- `travelconnect-mongodb`
 
 ### Volume Names
-- `travelconnect_mongodb_data`
 - `travelconnect_backend_uploads`
 
 ### Network Name
 - `travelconnect_travelconnect-network`
+
+### Required Environment Variables
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/travelconnect?retryWrites=true&w=majority
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+```
 
 ---
 

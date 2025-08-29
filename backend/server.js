@@ -89,6 +89,16 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API health check endpoint for Docker
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    message: 'TravelConnect API is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+});
+
 // API routes - Import and use routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');

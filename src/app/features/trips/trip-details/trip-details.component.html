@@ -1,0 +1,1042 @@
+<div class="trip-details-container">
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner">
+      <div class="spinner"></div>
+        <h3>Loading trip details...</h3>
+        <p>Please wait while we fetch your trip information</p>
+      </div>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="error-state">
+      <div class="error-content">
+        <i class="icon-alert-circle error-icon"></i>
+      <h3>{{ error() }}</h3>
+        <p>We encountered an issue loading your trip details. Please try again.</p>
+        <div class="error-actions">
+          <button class="btn btn-primary" (click)="fetchTripDetails(tripId())">
+            <i class="icon-refresh"></i>
+            Try Again
+          </button>
+          <button class="btn btn-secondary" routerLink="/trips">
+            <i class="icon-arrow-left"></i>
+            Back to Trips
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Trip Details Content -->
+  @if (trip() && !isLoading() && !error()) {
+    <!-- Hero Section -->
+    <div class="trip-hero" [class.no-image]="!hasCoverImage()" [style.background-image]="hasCoverImage() ? 'url(' + getCoverImage() + ')' : 'none'">
+      <div class="hero-overlay">
+        <div class="hero-content">
+          <!-- Back Button -->
+          <button class="back-button" routerLink="/trips">
+            <i class="icon-arrow-left"></i>
+            <span>Back to Trips</span>
+          </button>
+
+          <!-- Trip Status & Type -->
+          <div class="trip-badges">
+            <span class="trip-badge" [class]="trip()!.isPublic ? 'public' : 'private'">
+              <i [class]="trip()!.isPublic ? 'icon-globe' : 'icon-lock'"></i>
+              {{ trip()!.isPublic ? 'Public' : 'Private' }} Trip
+            </span>
+            <span class="trip-badge type">
+              <i class="icon-tag"></i>
+              {{ trip()!.tripType | titlecase }}
+            </span>
+          </div>
+
+          <!-- Trip Title & Description -->
+          @if (!isEditingTrip()) {
+            <h1 class="trip-title">{{ trip()!.tripName }}</h1>
+            <div class="trip-destination">
+              <i class="icon-map-pin"></i>
+              <span>{{ trip()!.destination }}</span>
+            </div>
+            @if (trip()!.description) {
+              <p class="trip-description">{{ trip()!.description }}</p>
+            }
+          } @else {
+            <!-- Edit Form in Hero -->
+            <div class="edit-form-hero">
+              <input
+                type="text"
+                class="hero-title-input"
+                placeholder="Trip name"
+                [value]="editForm().tripName"
+(input)="updateEditForm('tripName', $any($event.target).value)">
+
+                            <div class="hero-destination-input-wrapper">
+                <div class="hero-destination-input"
+                     [class.suggestions-open]="destSuggestOpen()"
+                     [class.location-selected]="selectedDestinationPlace() !== null">
+                  <i class="icon-map-pin"></i>
+                  <input
+                    type="text"
+                    placeholder="Search destination..."
+                    [value]="editForm().destination"
+                    (input)="onDestinationInputChange($event)"
+                    autocomplete="off">
+                </div>
+                @if (destSuggestOpen() && destSuggestions().length > 0) {
+                  <ul class="hero-suggestions">
+                    @for (place of destSuggestions(); track place.id || place.place_id) {
+                      <li class="hero-suggestion-item" (click)="selectDestinationSuggestion(place)">
+                        <i class="icon-map-pin"></i>
+                        <div class="suggestion-content">
+                          <div class="suggestion-title">{{ place.displayName?.text || place.name }}</div>
+                          <div class="suggestion-address">{{ place.formattedAddress || place.vicinity }}</div>
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+
+                              <textarea
+                  class="hero-description-input"
+                  placeholder="Trip description"
+                  rows="3"
+                  [value]="editForm().description"
+                  (input)="updateEditForm('description', $any($event.target).value)"></textarea>
+
+                <div class="edit-form-row">
+                  <div class="form-group">
+                    <label>Start Date</label>
+                    <input
+                      type="date"
+                      class="hero-date-input"
+                      [value]="editForm().startDate"
+                      (input)="updateEditForm('startDate', $any($event.target).value)">
+                  </div>
+                  <div class="form-group">
+                    <label>End Date</label>
+                    <input
+                      type="date"
+                      class="hero-date-input"
+                      [value]="editForm().endDate"
+                      (input)="updateEditForm('endDate', $any($event.target).value)">
+                  </div>
+                  <div class="form-group">
+                    <label>Max Members</label>
+                    <input
+                      type="number"
+                      class="hero-number-input"
+                      min="1"
+                      max="50"
+                      [value]="editForm().maxMembers"
+                      (input)="updateEditForm('maxMembers', +$any($event.target).value)">
+                  </div>
+                </div>
+            </div>
+          }
+
+          <!-- Trip Dates & Stats -->
+          <div class="trip-meta">
+            <div class="trip-dates">
+              <i class="icon-calendar"></i>
+              <span>{{ formatDate(trip()!.startDate) }} - {{ formatDate(trip()!.endDate) }}</span>
+            </div>
+            <div class="trip-stats">
+              <div class="stat">
+                <i class="icon-users"></i>
+                <span>{{ trip()!.members.length }}/{{ trip()!.maxMembers }} members</span>
+              </div>
+              <div class="stat">
+                <i class="icon-check-square"></i>
+                <span>{{ completedChecklistItems() }}/{{ trip()!.checklist.length }} tasks</span>
+              </div>
+          </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="hero-actions">
+            @if (canEdit()) {
+              @if (!isEditingTrip()) {
+                <button class="btn btn-primary" (click)="startEditingTrip()">
+                  <i class="icon-edit"></i>
+                  <span>Edit Trip</span>
+                </button>
+              } @else {
+                <button class="btn btn-success" (click)="saveTrip()">
+                  <i class="icon-check"></i>
+                  <span>Save Changes</span>
+                </button>
+                <button class="btn btn-secondary" (click)="cancelEditingTrip()">
+                  <i class="icon-x"></i>
+                  <span>Cancel</span>
+                </button>
+              }
+            }
+
+            <button class="btn btn-outline" (click)="showShareModal.set(true)">
+              <i class="icon-share"></i>
+              <span>Share</span>
+            </button>
+
+            @if (isOwner()) {
+              <button class="btn btn-danger" (click)="openDeleteModal()">
+                <i class="icon-trash"></i>
+                <span>Delete</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="trip-navigation">
+      <div class="nav-container">
+        <button
+          class="nav-tab"
+          [class.active]="activeTab() === 'overview'"
+          (click)="setActiveTab('overview')">
+          <i class="icon-info"></i>
+          <span>Overview</span>
+        </button>
+
+      <button
+          class="nav-tab"
+        [class.active]="activeTab() === 'itinerary'"
+        (click)="setActiveTab('itinerary')">
+        <i class="icon-map"></i>
+          <span>Itinerary</span>
+          <span class="nav-badge">{{ trip()!.itinerary.length }}</span>
+      </button>
+
+      <button
+          class="nav-tab"
+        [class.active]="activeTab() === 'checklist'"
+        (click)="setActiveTab('checklist')">
+        <i class="icon-check-square"></i>
+          <span>Checklist</span>
+          <span class="nav-badge">{{ completedChecklistItems() }}/{{ trip()!.checklist.length }}</span>
+      </button>
+
+      <button
+          class="nav-tab"
+          [class.active]="activeTab() === 'members'"
+          (click)="setActiveTab('members')">
+        <i class="icon-users"></i>
+          <span>Members</span>
+          <span class="nav-badge">{{ trip()!.members.length + trip()!.collaborators.length }}</span>
+        </button>
+
+        @if (canEdit()) {
+          <button
+            class="nav-tab"
+            [class.active]="activeTab() === 'settings'"
+            (click)="setActiveTab('settings')">
+            <i class="icon-settings"></i>
+            <span>Settings</span>
+      </button>
+        }
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Overview Tab -->
+      @if (activeTab() === 'overview') {
+        <div class="overview-tab">
+          <div class="overview-grid">
+            <!-- Trip Info Card -->
+            <div class="info-card">
+              <div class="card-header">
+                <h3>Trip Information</h3>
+                <i class="icon-info"></i>
+              </div>
+              <div class="card-content">
+                <div class="info-row">
+                  <span class="label">Duration:</span>
+                  <span class="value">{{ tripDays().length }} days</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Trip Type:</span>
+                  <span class="value">{{ trip()!.tripType | titlecase }}</span>
+                </div>
+                @if (trip()!.createdBy) {
+                  <div class="info-row">
+                    <span class="label">Created by:</span>
+                    <div class="user-info">
+                      <img [src]="getUserAvatar(trip()!.createdBy)" [alt]="trip()!.createdBy.fullName || 'Creator'">
+                      <span>{{ trip()!.createdBy.fullName }}</span>
+                    </div>
+                  </div>
+                }
+                @if (trip()!.interests.length > 0) {
+                  <div class="info-row">
+                    <span class="label">Interests:</span>
+                    <div class="interests-tags">
+                      @for (interest of trip()!.interests; track interest) {
+                        <span class="interest-tag">{{ interest | titlecase }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Quick Stats Card -->
+            <div class="stats-card">
+              <div class="card-header">
+                <h3>Quick Stats</h3>
+                <i class="icon-bar-chart"></i>
+              </div>
+              <div class="card-content">
+                <div class="stat-item">
+                  <div class="stat-icon checklist">
+                    <i class="icon-check-square"></i>
+                  </div>
+                  <div class="stat-details">
+                    <span class="stat-number">{{ checklistProgress() }}%</span>
+                    <span class="stat-label">Checklist Complete</span>
+                  </div>
+                </div>
+
+                <div class="stat-item">
+                  <div class="stat-icon itinerary">
+                    <i class="icon-map"></i>
+                  </div>
+                  <div class="stat-details">
+                    <span class="stat-number">{{ trip()!.itinerary.length }}</span>
+                    <span class="stat-label">Activities Planned</span>
+                  </div>
+                </div>
+
+                <div class="stat-item">
+                  <div class="stat-icon members">
+                    <i class="icon-users"></i>
+                  </div>
+                  <div class="stat-details">
+                    <span class="stat-number">{{ trip()!.members.length }}</span>
+                    <span class="stat-label">Trip Members</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Activity Card -->
+            <div class="activity-card">
+              <div class="card-header">
+                <h3>Recent Activity</h3>
+                <i class="icon-activity"></i>
+              </div>
+              <div class="card-content">
+                <div class="activity-item">
+                  <div class="activity-icon">
+                    <i class="icon-check"></i>
+                  </div>
+                  <div class="activity-details">
+                    <span class="activity-text">Trip created</span>
+                    <span class="activity-time">{{ formatDate(trip()!.createdAt) }}</span>
+                  </div>
+                </div>
+                <!-- Add more activity items as needed -->
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Itinerary Tab -->
+      @if (activeTab() === 'itinerary') {
+        <div class="itinerary-tab">
+          <div class="tab-header">
+            <div class="header-content">
+            <h2>Trip Itinerary</h2>
+              <p>Plan your daily activities and schedule</p>
+            </div>
+            @if (canEdit()) {
+              <button class="btn btn-primary" (click)="openItineraryModal()">
+              <i class="icon-plus"></i>
+                <span>Add Activity</span>
+            </button>
+            }
+          </div>
+
+          <div class="itinerary-timeline">
+            @for (dayInfo of tripDays(); track dayInfo.day) {
+              <div class="day-section">
+                <div class="day-header">
+                  <div class="day-info">
+                    <h3>Day {{ dayInfo.day }}</h3>
+                    <span class="day-date">{{ dayInfo.formattedDate }}</span>
+                  </div>
+                  @if (canEdit()) {
+                    <button class="btn btn-sm btn-outline" (click)="openItineraryModal(dayInfo.day)">
+                      <i class="icon-plus"></i>
+                      <span>Add Activity</span>
+                    </button>
+                  }
+                </div>
+
+                <div class="day-activities">
+                  @if (getItineraryForDay(dayInfo.day).length === 0) {
+                    <div class="no-activities">
+                      <div class="empty-state">
+                        <i class="icon-calendar-plus"></i>
+                        <h4>No activities planned</h4>
+                        <p>Add activities to make the most of this day</p>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="activities-list">
+                      @for (activity of getItineraryForDay(dayInfo.day); track activity._id) {
+                      <div class="activity-card">
+                        <div class="activity-time">
+                          @if (activity.startTime) {
+                              <div class="start-time">{{ activity.startTime }}</div>
+                            @if (activity.endTime) {
+                                <div class="end-time">{{ activity.endTime }}</div>
+                            }
+                          } @else {
+                              <div class="all-day">All day</div>
+                          }
+                        </div>
+
+                        <div class="activity-content">
+                          <h4 class="activity-title">{{ activity.title }}</h4>
+
+                          <div class="activity-location">
+                            <i class="icon-map-pin"></i>
+                              <span>{{ activity.location }}</span>
+                          </div>
+
+                          @if (activity.notes) {
+                            <p class="activity-notes">{{ activity.notes }}</p>
+                          }
+                          </div>
+
+                          @if (canEdit()) {
+                          <div class="activity-actions">
+                              <button class="action-btn edit-btn" (click)="editItineraryItem(activity)" title="Edit activity">
+                              <i class="icon-edit"></i>
+                            </button>
+                              <button class="action-btn delete-btn" (click)="deleteItineraryItem(activity._id)" title="Delete activity">
+                              <i class="icon-trash"></i>
+                            </button>
+                          </div>
+                          }
+                        </div>
+                      }
+                      </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Checklist Tab -->
+      @if (activeTab() === 'checklist') {
+        <div class="checklist-tab">
+          <div class="tab-header">
+            <div class="header-content">
+            <h2>Trip Checklist</h2>
+              <p>Keep track of everything you need for your trip</p>
+            </div>
+            <div class="checklist-progress">
+              <div class="progress-circle">
+                <svg class="progress-ring" width="60" height="60">
+                  <circle
+                    class="progress-ring-circle"
+                    stroke="var(--primary-color)"
+                    stroke-width="4"
+                    fill="transparent"
+                    r="26"
+                    cx="30"
+                    cy="30"
+                    [style.stroke-dasharray]="163.36"
+                    [style.stroke-dashoffset]="163.36 - (163.36 * checklistProgress()) / 100">
+                  </circle>
+                </svg>
+                <div class="progress-text">{{ checklistProgress() }}%</div>
+                </div>
+              <div class="progress-details">
+                <span class="completed">{{ completedChecklistItems() }} completed</span>
+                <span class="total">{{ trip()!.checklist.length }} total items</span>
+              </div>
+            </div>
+          </div>
+
+          @if (canEdit()) {
+          <div class="add-checklist-item">
+              <div class="input-group">
+            <input
+              type="text"
+                  placeholder="Add a new checklist item..."
+              [value]="newChecklistItem()"
+                  (input)="newChecklistItem.set($any($event.target).value)"
+                  (keyup.enter)="addChecklistItem()"
+                  class="checklist-input">
+                <button
+                  class="btn btn-primary"
+                  (click)="addChecklistItem()"
+                  [disabled]="!newChecklistItem().trim()">
+              <i class="icon-plus"></i>
+                  <span>Add Item</span>
+            </button>
+          </div>
+            </div>
+          }
+
+          <div class="checklist-items">
+            @if (trip() && trip()!.checklist && trip()!.checklist.length === 0) {
+              <div class="empty-state">
+                <i class="icon-check-circle"></i>
+                <h3>No checklist items yet</h3>
+                <p>Start adding items to keep track of your trip preparations</p>
+              </div>
+            } @else if (trip() && trip()!.checklist && trip()!.checklist.length > 0) {
+              @for (item of trip()!.checklist; track item._id) {
+                <div class="checklist-item"
+                     [class.completed]="item.completed"
+                     [class.toggling]="togglingItems().has(item._id)">
+                  <div class="checkbox-wrapper" (click)="toggleChecklistItem(item._id)">
+                    <input
+                      type="checkbox"
+                      [checked]="item.completed"
+                      [disabled]="togglingItems().has(item._id)"
+                      (change)="$event.stopPropagation()"
+                      (click)="$event.stopPropagation()">
+                    <span class="checkbox-custom">
+                      @if (togglingItems().has(item._id)) {
+                        <div class="loading-spinner-small"></div>
+                      } @else {
+                        <i class="icon-check"></i>
+                      }
+                    </span>
+                  </div>
+
+                  <span class="item-text" [class.completed]="item.completed">
+                    {{ item.text }}
+                  </span>
+
+                  @if (canEdit()) {
+                    <button
+                      class="delete-btn"
+                      (click)="deleteChecklistItem(item._id)"
+                      title="Delete item">
+                    <i class="icon-trash"></i>
+                  </button>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Members Tab -->
+      @if (activeTab() === 'members') {
+        <div class="members-tab">
+          <div class="tab-header">
+            <div class="header-content">
+              <h2>Trip Members</h2>
+              <p>Manage who can access and collaborate on this trip</p>
+            </div>
+            @if (canEdit()) {
+              <button class="btn btn-primary" (click)="showInviteModal.set(true)">
+              <i class="icon-user-plus"></i>
+                <span>Invite Members</span>
+              </button>
+            }
+          </div>
+
+          <!-- Trip Creator -->
+          @if (trip()!.createdBy) {
+            <div class="members-section">
+              <h3>Trip Creator</h3>
+              <div class="member-card owner">
+                <div class="member-avatar">
+                  <img [src]="getUserAvatar(trip()!.createdBy)" [alt]="trip()!.createdBy.fullName">
+                </div>
+                <div class="member-info">
+                  <h4>{{ trip()!.createdBy.fullName }}</h4>
+                  <span class="member-username">{{ trip()!.createdBy.username }}</span>
+                </div>
+                <div class="member-role">
+                  <span class="role-badge owner">Owner</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Collaborators -->
+          @if (trip()!.collaborators.length > 0) {
+            <div class="members-section">
+              <h3>Collaborators</h3>
+              <div class="members-list">
+                @for (collaborator of trip()!.collaborators; track collaborator.user.id) {
+                  <div class="member-card">
+                    <div class="member-avatar">
+                      <img [src]="getUserAvatar(collaborator.user)" [alt]="collaborator.user.fullName">
+                    </div>
+                    <div class="member-info">
+                      <h4>{{ collaborator.user.fullName }}</h4>
+                      <span class="member-username">{{ collaborator.user.username }}</span>
+                    </div>
+                    <div class="member-role">
+                      <span class="role-badge" [class]="collaborator.role">{{ collaborator.role | titlecase }}</span>
+                    </div>
+                    @if (isOwner()) {
+                      <div class="member-actions">
+                        <button
+                          class="action-btn delete-btn"
+                          (click)="removeCollaborator(collaborator.user._id || collaborator.user.id || '')"
+                          title="Remove collaborator">
+                          <i class="icon-user-minus"></i>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Regular Members -->
+          @if (trip()!.members.length > 0) {
+            <div class="members-section">
+              <h3>Members</h3>
+              <div class="members-list">
+                @for (member of trip()!.members; track member.id) {
+                  <div class="member-card">
+                    <div class="member-avatar">
+                      <img [src]="getUserAvatar(member)" [alt]="member.fullName || 'Member'">
+                    </div>
+                    <div class="member-info">
+                      <h4>{{ member.fullName }}</h4>
+                      <span class="member-username">{{ member.username }}</span>
+                    </div>
+                    <div class="member-role">
+                      <span class="role-badge member">Member</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Join Requests -->
+          @if (trip()!.joinRequests && trip()!.joinRequests.length > 0 && isOwner()) {
+            <div class="members-section">
+              <h3>Join Requests</h3>
+              <div class="join-requests">
+                @for (request of getPendingJoinRequests(); track request.user._id) {
+                  <div class="join-request-card">
+                    <div class="member-avatar">
+                      <img [src]="getUserAvatar(request.user)" [alt]="request.user.fullName">
+                    </div>
+                    <div class="member-info">
+                      <h4>{{ request.user.fullName }}</h4>
+                      <span class="member-username">{{ request.user.username }}</span>
+                      <span class="request-time">Requested {{ formatDate(request.requestedAt) }}</span>
+                      @if (request.message) {
+                        <div class="request-message">
+                          <p>"{{ request.message }}"</p>
+                        </div>
+                      }
+                    </div>
+                    <div class="request-actions">
+                      <button class="btn btn-sm btn-success" (click)="handleJoinRequest('approve', request.user._id)" [disabled]="processingRequest(request.user._id)">
+                        @if (processingRequest(request.user._id)) {
+                          <span class="loading-spinner-small"></span>
+                        } @else {
+                          <i class="icon-check"></i>
+                        }
+                        <span>Accept</span>
+                      </button>
+                      <button class="btn btn-sm btn-danger" (click)="handleJoinRequest('reject', request.user._id)" [disabled]="processingRequest(request.user._id)">
+                        @if (processingRequest(request.user._id)) {
+                          <span class="loading-spinner-small"></span>
+                        } @else {
+                          <i class="icon-x"></i>
+                        }
+                        <span>Decline</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Settings Tab -->
+      @if (activeTab() === 'settings' && canEdit()) {
+        <div class="settings-tab">
+          <div class="tab-header">
+            <div class="header-content">
+              <h2>Trip Settings</h2>
+              <p>Configure your trip preferences and privacy settings</p>
+            </div>
+          </div>
+
+          <div class="settings-sections">
+            <!-- Privacy Settings -->
+            <div class="settings-card">
+              <div class="settings-header">
+                <h3>Privacy & Visibility</h3>
+                <i class="icon-shield"></i>
+              </div>
+              <div class="settings-content">
+                <div class="setting-item">
+                  <div class="setting-info">
+                    <h4>Trip Visibility</h4>
+                    <p>Control who can discover and view your trip</p>
+                  </div>
+                  <div class="setting-control">
+                    <label class="toggle-switch">
+                      <input
+                        type="checkbox"
+                        [checked]="editForm().isPublic"
+(change)="updateEditForm('isPublic', $any($event.target).checked)">
+                      <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">{{ editForm().isPublic ? 'Public' : 'Private' }}</span>
+                  </div>
+                </div>
+
+                <div class="setting-item">
+                  <div class="setting-info">
+                    <h4>Maximum Members</h4>
+                    <p>Set the maximum number of people who can join this trip</p>
+                  </div>
+                  <div class="setting-control">
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      [value]="editForm().maxMembers"
+(input)="updateEditForm('maxMembers', +$any($event.target).value)"
+                      class="number-input">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sharing Settings -->
+            <div class="settings-card">
+              <div class="settings-header">
+                <h3>Sharing & Collaboration</h3>
+                <i class="icon-share-2"></i>
+              </div>
+              <div class="settings-content">
+                <div class="setting-item">
+                  <div class="setting-info">
+                    <h4>Share Link</h4>
+                    <p>Allow people to join your trip using a unique link</p>
+                  </div>
+                  <div class="setting-control">
+                    @if (trip()!.shareCode) {
+                      <div class="share-link-display">
+                        <input
+                          type="text"
+                          readonly
+                          [value]="'https://travelconnect.com/trips/join/' + trip()!.shareCode"
+                          class="share-input">
+                        <button class="btn btn-sm btn-outline" (click)="copyShareLink()">
+                          <i class="icon-copy"></i>
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    } @else {
+                      <button class="btn btn-primary" (click)="generateShareLink()">
+                        <i class="icon-link"></i>
+                        <span>Generate Link</span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Danger Zone -->
+            @if (isOwner()) {
+              <div class="settings-card danger">
+                <div class="settings-header">
+                  <h3>Danger Zone</h3>
+                  <i class="icon-alert-triangle"></i>
+                </div>
+                <div class="settings-content">
+                  <div class="setting-item">
+                    <div class="setting-info">
+                      <h4>Delete Trip</h4>
+                      <p>Permanently delete this trip and all associated data. This action cannot be undone.</p>
+                    </div>
+                    <div class="setting-control">
+                      <button class="btn btn-danger" (click)="openDeleteModal()">
+                        <i class="icon-trash"></i>
+                        <span>Delete Trip</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Modals -->
+
+  <!-- Itinerary Modal -->
+  @if (showItineraryModal()) {
+    <div class="modal-overlay" (click)="closeItineraryModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ editingItineraryId() ? 'Edit Activity' : 'Add Activity' }}</h3>
+          <button class="modal-close" (click)="closeItineraryModal()">
+            <i class="icon-x"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <form (ngSubmit)="addItineraryItem()">
+            <div class="form-group">
+              <label>Day</label>
+              <select
+                [value]="newItineraryItem().day"
+(change)="updateItineraryItem('day', +$any($event.target).value)">
+                @for (day of tripDays(); track day.day) {
+                  <option [value]="day.day">Day {{ day.day }} - {{ day.formattedDate }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Activity Title *</label>
+              <input
+                type="text"
+                placeholder="e.g., Visit Eiffel Tower"
+                [value]="newItineraryItem().title || ''"
+(input)="updateItineraryItem('title', $any($event.target).value)"
+                required>
+            </div>
+
+            <div class="form-group">
+              <label>Location *</label>
+              <div class="autocomplete-wrapper"
+                   [class.suggestions-open]="locationSuggestionsOpen()"
+                   [class.location-selected]="selectedLocation() !== null">
+                <input
+                  type="text"
+                  placeholder="Search for a location..."
+                  [value]="newItineraryItem().location || ''"
+                  (input)="onLocationInputChange($event)"
+                  autocomplete="off"
+                  required>
+                @if (locationSuggestionsOpen() && locationSuggestions().length > 0) {
+                  <ul class="suggestions">
+                    @for (place of locationSuggestions(); track place.id || place.place_id) {
+                      <li class="suggestion-item" (click)="selectLocationSuggestion(place)">
+                        <i class="icon-map-pin"></i>
+                        <div class="suggestion-content">
+                          <div class="suggestion-title">{{ place.displayName?.text || place.name }}</div>
+                          <div class="suggestion-address">{{ place.formattedAddress || place.vicinity }}</div>
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Start Time</label>
+                <input
+                  type="time"
+                  [value]="newItineraryItem().startTime || ''"
+(input)="updateItineraryItem('startTime', $any($event.target).value)">
+              </div>
+              <div class="form-group">
+                <label>End Time</label>
+                <input
+                  type="time"
+                  [value]="newItineraryItem().endTime || ''"
+(input)="updateItineraryItem('endTime', $any($event.target).value)">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea
+                placeholder="Additional notes about this activity..."
+                rows="3"
+                [value]="newItineraryItem().notes || ''"
+(input)="updateItineraryItem('notes', $any($event.target).value)"></textarea>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" (click)="closeItineraryModal()">
+                <span>Cancel</span>
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="!newItineraryItem().title || !newItineraryItem().location">
+                <i class="{{ editingItineraryId() ? 'icon-check' : 'icon-plus' }}"></i>
+                <span>{{ editingItineraryId() ? 'Update Activity' : 'Add Activity' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Share Modal -->
+  @if (showShareModal()) {
+    <div class="modal-overlay" (click)="showShareModal.set(false)">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Share Trip</h3>
+          <button class="modal-close" (click)="showShareModal.set(false)">
+            <i class="icon-x"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="share-options">
+            @if (trip()!.shareCode) {
+              <div class="share-option">
+                <h4>Share Link</h4>
+                <p>Anyone with this link can request to join your trip</p>
+                <div class="share-link-container">
+                  <input
+                    type="text"
+                    readonly
+                    [value]="'https://travelconnect.com/trips/join/' + trip()!.shareCode"
+                    class="share-input">
+                  <button class="btn btn-primary" (click)="copyShareLink()">
+                    <i class="icon-copy"></i>
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="share-option">
+                <h4>Generate Share Link</h4>
+                <p>Create a unique link to share your trip</p>
+                <button class="btn btn-primary" (click)="generateShareLink()">
+                  <i class="icon-link"></i>
+                  <span>Generate Link</span>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Invite Modal -->
+  @if (showInviteModal()) {
+    <div class="modal-overlay" (click)="showInviteModal.set(false)">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Invite Members</h3>
+          <button class="modal-close" (click)="showInviteModal.set(false)">
+            <i class="icon-x"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="user-search">
+            <div class="search-input">
+              <i class="icon-search"></i>
+              <input
+                type="text"
+                placeholder="Search by username or name..."
+                [value]="userSearchQuery()"
+                (input)="userSearchQuery.set($any($event.target).value); searchUsers()">
+            </div>
+
+            @if (searchLoading()) {
+              <div class="search-loading">
+                <div class="spinner"></div>
+                <span>Searching...</span>
+              </div>
+            }
+
+            @if (searchResults().length > 0) {
+              <div class="search-results">
+                @for (user of searchResults(); track user.id) {
+                  <div class="user-result">
+                    <div class="user-avatar">
+                      <img [src]="getUserAvatar(user)" [alt]="user.fullName">
+                    </div>
+                    <div class="user-info">
+                      <h4>{{ user.fullName }}</h4>
+                      <span class="username">{{ user.username }}</span>
+                    </div>
+                    <button class="btn btn-sm btn-primary" (click)="inviteUser(user._id || user.id || '')">
+                      <i class="icon-user-plus"></i>
+                      <span>Invite</span>
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteModal()) {
+    <div class="modal-overlay" (click)="closeDeleteModal()">
+      <div class="modal-content danger" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Delete Trip</h3>
+          <button class="modal-close" (click)="closeDeleteModal()">
+            <i class="icon-x"></i>
+              </button>
+            </div>
+
+        <div class="modal-body">
+          <div class="danger-content">
+            <i class="icon-alert-triangle danger-icon"></i>
+            <h4>Are you sure you want to delete this trip?</h4>
+            <p>This action will permanently delete "<strong>{{ trip()!.tripName }}</strong>" and all associated data including:</p>
+            <ul>
+              <li>All itinerary items and activities</li>
+              <li>Checklist items and progress</li>
+              <li>Member list and collaborations</li>
+              <li>All trip photos and documents</li>
+            </ul>
+            <p class="warning"><strong>This action cannot be undone.</strong></p>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="closeDeleteModal()">
+              <span>Cancel</span>
+            </button>
+            <button class="btn btn-danger" (click)="deleteTrip()">
+              <i class="icon-trash"></i>
+              <span>Delete Trip</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

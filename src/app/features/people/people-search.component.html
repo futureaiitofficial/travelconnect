@@ -1,0 +1,56 @@
+<div class="people-page">
+  <div class="people-header">
+    <h1>Find People</h1>
+    <p>Search by username or name and connect with travelers.</p>
+    <div class="search-bar">
+      <i class="icon-search"></i>
+      <input type="text" placeholder="Search people..."
+             [value]="query()" (input)="onQueryInput($event)" />
+    </div>
+  </div>
+
+  <div class="results" *ngIf="results().length > 0">
+    <div class="user-card" *ngFor="let u of results()" (click)="openProfile(u)">
+      <img class="avatar" [src]="u.profilePicture || '/assets/images/avatars/user.svg'" alt="" />
+      <div class="info">
+        <div class="name">{{ u.fullName || (u.firstName + ' ' + u.lastName) || u.username }}</div>
+        <div class="username">@{{ u.username }}</div>
+        <div class="bio" *ngIf="u.bio">{{ u.bio }}</div>
+      </div>
+      <div class="actions" (click)="$event.stopPropagation()">
+        <button *ngIf="!u.isFollowing"
+                class="btn follow"
+                (click)="follow(u)"
+                [disabled]="followingUsers().has(u._id)">
+          <span *ngIf="!followingUsers().has(u._id)">Follow</span>
+          <span *ngIf="followingUsers().has(u._id)" class="loading-text">Following...</span>
+        </button>
+        <button *ngIf="u.isFollowing"
+                class="btn outline"
+                (click)="unfollow(u)"
+                [disabled]="followingUsers().has(u._id)">
+          <span *ngIf="!followingUsers().has(u._id)">Unfollow</span>
+          <span *ngIf="followingUsers().has(u._id)" class="loading-text">Unfollowing...</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="load-more" *ngIf="hasMore()">
+      <button class="btn" (click)="loadMore()" [disabled]="loading()">Load more</button>
+    </div>
+  </div>
+
+  <div class="error" *ngIf="error()">
+    <p>{{ error() }}</p>
+  </div>
+
+  <div class="empty" *ngIf="!loading() && results().length === 0 && query().length > 0 && !error()">
+    <p>No users found for "{{ query() }}"</p>
+  </div>
+
+  <div class="loading" *ngIf="loading()">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+

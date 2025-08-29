@@ -1,0 +1,170 @@
+<div class="profile-container">
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading profile...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error() && !loading()) {
+    <div class="error-container">
+      <div class="error-message">
+        <h3>Profile not found</h3>
+        <p>{{ error() }}</p>
+        <button class="btn btn-primary" routerLink="/feed">Go to Feed</button>
+      </div>
+    </div>
+  }
+
+  <!-- Profile Content -->
+  @if (!loading() && !error() && profileUser()) {
+    <!-- Cover -->
+    <div class="cover" [style.backgroundImage]="'url(' + coverUrl() + ')'">
+      <div class="overlay"></div>
+    </div>
+
+  <!-- Header Card -->
+  <div class="header-card card">
+    <div class="avatar-wrap">
+      <img [src]="avatarUrl()" class="avatar avatar-xl" alt="avatar">
+    </div>
+    <div class="identity">
+      <h1>{{ displayName() }}</h1>
+      <div class="meta">
+        <span class="username">@{{ username() }}</span>
+        <span class="dot">•</span>
+        <span class="location"><i class="icon-map-pin"></i> {{ location() }}</span>
+        <span class="dot">•</span>
+        <a [href]="website()" target="_blank" rel="noopener">Website</a>
+      </div>
+      <p class="bio">{{ bio() }}</p>
+      <div class="stats">
+        <div class="stat"><strong>{{ stats().posts }}</strong><span>Posts</span></div>
+        <div class="stat"><strong>{{ formattedFollowers() }}</strong><span>Followers</span></div>
+        <div class="stat"><strong>{{ formattedFollowing() }}</strong><span>Following</span></div>
+      </div>
+      <div class="actions">
+        @if (isOwnProfile()) {
+          <button class="btn" (click)="editProfile()">Edit Profile</button>
+          <button class="btn" (click)="shareProfile()">Share</button>
+          <button class="btn btn-primary" routerLink="/create">Create</button>
+        } @else {
+          @if (following()) {
+            <button class="btn" (click)="toggleFollow()">Unfollow</button>
+          } @else {
+            <button class="btn btn-primary" (click)="toggleFollow()">Follow</button>
+          }
+          <button class="btn" (click)="messageUser()">Message</button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    @for (tab of tabs; track tab) {
+      <button class="tab btn" [class.active]="activeTab() === tab" (click)="setTab(tab)">{{ tab }}</button>
+    }
+  </div>
+
+  <!-- Content -->
+  <div class="tab-content">
+    @if (activeTab() === 'Posts') {
+      <div class="posts-grid">
+        @for (p of posts(); track p.id; let i = $index) {
+          <div class="post-card" (click)="openPost(i)">
+            <img [src]="p.imageUrl" alt="post">
+            <div class="post-overlay">
+              <span><i class="icon-heart"></i> {{ p.likes }}</span>
+              <span><i class="icon-message-circle"></i> {{ p.comments }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (activeTab() === 'Trips') {
+      <div class="trips-grid">
+        @for (t of trips(); track t.id) {
+          <div class="trip-card card" routerLink="/trips/{{ t.id }}">
+            <div class="trip-cover"><img [src]="t.coverImage" alt="trip"></div>
+            <div class="trip-body">
+              <h3>{{ t.title }}</h3>
+              <div class="trip-meta">
+                <span><i class="icon-map-pin"></i> {{ t.location }}</span>
+                <span><i class="icon-calendar"></i> {{ t.startDate | date:'MMM d' }} - {{ t.endDate | date:'MMM d, yyyy' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="about">
+        <h3>About {{ displayName() }}</h3>
+        <ul>
+          <li><strong>Interests:</strong> {{ profileUser()?.interests?.join(', ') || 'N/A' }}</li>
+          <li><strong>Travel History:</strong> {{ profileUser()?.travelHistory?.join(', ') || 'N/A' }}</li>
+          <li><strong>Member since:</strong> {{ profileUser()?.createdAt | date:'yyyy' }}</li>
+        </ul>
+      </div>
+    }
+  </div>
+  } <!-- End profile content -->
+</div>
+
+<!-- Lightbox Modal -->
+@if (currentPost()) {
+  <div class="lightbox" (click)="closePost()">
+    <div class="lightbox-dialog" (click)="$event.stopPropagation()">
+      <button class="lightbox-close btn btn-icon" (click)="closePost()"><i class="icon-x"></i></button>
+      <button class="lightbox-prev btn btn-icon" (click)="prevPost()"><i class="icon-chevron-left"></i></button>
+      <div class="lightbox-content">
+        <div class="lightbox-media">
+          <img class="lightbox-image" [src]="(fullPost()?.media?.[0] || currentPost()!.imageUrl)" alt="post">
+        </div>
+        <div class="lightbox-meta">
+          @if (lightboxLoading()) {
+            <div class="lightbox-loading"><span class="icon-loader"></span></div>
+          } @else if (lightboxError()) {
+            <div class="lightbox-error">{{ lightboxError() }}</div>
+          } @else if (fullPost()) {
+            <div class="post-header">
+              <img [src]="getLightboxAvatarUrl()" class="avatar avatar-sm" alt="avatar">
+              <div class="post-user">
+                <div class="name">{{ getLightboxDisplayName() }}</div>
+                <div class="username text-muted">@{{ getLightboxUsername() }}</div>
+              </div>
+            </div>
+
+            <div class="post-caption">
+              {{ fullPost()!.caption }}
+            </div>
+
+            @if (hasLightboxLocation()) {
+              <div class="post-location"><i class="icon-map-pin"></i> {{ getLightboxLocationName() }}</div>
+            }
+
+            @if (getLightboxHashtags().length) {
+              <div class="post-tags">
+                @for (tag of getLightboxHashtags(); track tag) {
+                  <span class="pill">#{{ tag }}</span>
+                }
+              </div>
+            }
+
+            <div class="post-actions">
+              <button class="btn btn-ghost" (click)="toggleLikeCurrent()">
+                <i class="icon-heart"></i>
+                {{ fullPost()!.likesCount || (fullPost()!.likes.length || 0) }}
+              </button>
+              <span class="text-muted">{{ fullPost()!.commentsCount || 0 }} comments</span>
+            </div>
+          }
+        </div>
+      </div>
+      <button class="lightbox-next btn btn-icon" (click)="nextPost()"><i class="icon-chevron-right"></i></button>
+    </div>
+  </div>
+}
+
+

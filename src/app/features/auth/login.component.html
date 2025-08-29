@@ -1,0 +1,160 @@
+<!-- Modern Login Page -->
+<div class="auth-page">
+  <div class="auth-container">
+    <!-- Brand Header -->
+    <div class="brand-header">
+      <h1 class="brand-name">TravelConnect</h1>
+      <p class="brand-tagline">Connect. Explore. Share your journey.</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="auth-card">
+      <div class="auth-card-header">
+        <h2>Welcome Back</h2>
+        <p>Sign in to continue your adventure</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form">
+        <!-- Email Field -->
+        <div class="form-field">
+          <label for="email" class="form-label">Email or Username</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="email"
+              formControlName="email"
+              placeholder="Enter email or username"
+              class="form-input"
+              [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+            />
+            <div class="input-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </div>
+          </div>
+          @if (getFieldError('email')) {
+            <div class="field-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              {{ getFieldError('email') }}
+            </div>
+          }
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-field">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-wrapper">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              id="password"
+              formControlName="password"
+              placeholder="Enter your password"
+              class="form-input"
+              [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            />
+            <button
+              type="button"
+              class="input-action"
+              (click)="togglePassword()"
+              title="Toggle password visibility"
+            >
+              @if (showPassword()) {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              } @else {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (getFieldError('password')) {
+            <div class="field-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              {{ getFieldError('password') }}
+            </div>
+          }
+        </div>
+
+        <!-- Error Message -->
+        @if (errorMessage()) {
+          <div class="auth-error">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <!-- Remember Me & Forgot Password -->
+        <div class="form-options">
+          <label class="checkbox-wrapper">
+            <input type="checkbox" />
+            <span class="checkbox-checkmark"></span>
+            <span class="checkbox-label">Remember me</span>
+          </label>
+          <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="auth-button"
+          [disabled]="loginForm.invalid || isLoading()"
+          [class.loading]="isLoading()"
+        >
+          @if (isLoading()) {
+            <div class="button-spinner"></div>
+            <span>Signing you in...</span>
+          } @else {
+            <span>Sign In</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          }
+        </button>
+      </form>
+
+      <!-- Sign Up Link -->
+      <div class="auth-switch">
+        <p>New to TravelConnect?</p>
+        <a routerLink="/register" class="switch-link">
+          Create your account
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="7" y1="17" x2="17" y2="7"></line>
+            <polyline points="7 7 17 7 17 17"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+      <p>&copy; 2024 TravelConnect. Made with ❤️ for travelers worldwide.</p>
+    </div>
+  </div>
+
+  <!-- Background Elements -->
+  <div class="bg-elements">
+    <div class="bg-circle bg-circle-1"></div>
+    <div class="bg-circle bg-circle-2"></div>
+    <div class="bg-circle bg-circle-3"></div>
+  </div>
+</div>

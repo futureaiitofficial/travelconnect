@@ -1,0 +1,82 @@
+<div class="edit-profile-container">
+  <div class="card header-card">
+    <div class="cover-picker">
+      <img [src]="coverUrl()" alt="cover">
+      <label class="btn btn-ghost btn-small">
+        <i class="icon-image"></i> Change cover
+        <input type="file" accept="image/*" (change)="handleCoverChange($event)">
+      </label>
+    </div>
+    <div class="avatar-picker">
+      <img [src]="avatarUrl()" class="avatar avatar-lg" alt="avatar">
+      <label class="btn btn-ghost btn-small">
+        <i class="icon-image"></i> Change avatar
+        <input type="file" accept="image/*" (change)="handleAvatarChange($event)">
+      </label>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="card error-card">
+      <div class="error-message">{{ error() }}</div>
+    </div>
+  }
+
+  <div class="card form-card">
+    <div class="grid">
+      <div class="field">
+        <label>First Name</label>
+        <input class="input" [value]="firstName()" (input)="firstName.set($any($event.target).value)" placeholder="Enter your first name">
+      </div>
+      <div class="field">
+        <label>Last Name</label>
+        <input class="input" [value]="lastName()" (input)="lastName.set($any($event.target).value)" placeholder="Enter your last name">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Display Name</label>
+      <input class="input" [value]="displayName()" (input)="displayName.set($any($event.target).value)" placeholder="How you'd like to be shown">
+    </div>
+
+    <div class="field">
+      <label>Username</label>
+      <input class="input" [value]="username()" readonly disabled placeholder="Username cannot be changed">
+      <small class="field-help">Your username cannot be changed after registration</small>
+    </div>
+
+    <div class="field">
+      <label>Bio</label>
+      <textarea class="input" rows="4" [value]="bio()" (input)="bio.set($any($event.target).value)" placeholder="Tell us about yourself and your travel experiences..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Interests</label>
+      <div class="row">
+        <input class="input" placeholder="Add interest" [value]="newInterest()" (input)="newInterest.set($any($event.target).value)" (keyup.enter)="addInterest()">
+        <button class="btn" (click)="addInterest()">Add</button>
+      </div>
+      <div class="tags">
+        @for (tag of interests(); track tag) {
+          <span class="pill">{{ tag }} <button class="tag-x" (click)="removeInterest(tag)">×</button></span>
+        }
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" (click)="cancel()" [disabled]="saving()">Cancel</button>
+      <button class="btn btn-primary" [disabled]="saving() || uploadingAvatar() || uploadingCover()" (click)="save()">
+        @if (saving()) {
+          <span class="spinner"></span> Saving...
+        } @else if (uploadingAvatar() || uploadingCover()) {
+          <span class="spinner"></span> Uploading...
+        } @else {
+          Save changes
+        }
+      </button>
+    </div>
+  </div>
+</div>
+
+

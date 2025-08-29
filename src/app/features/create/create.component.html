@@ -1,0 +1,133 @@
+<div class="create-container">
+  <div class="composer">
+    <div class="composer-left">
+      <div class="dropzone" (drop)="onDrop($event)" (dragover)="onDragOver($event)">
+        <input type="file" id="mediaInput" multiple accept="image/*,video/*" (change)="handleFileInput($event)">
+        <label for="mediaInput" class="dropzone-label">
+          <i class="icon-image"></i>
+          <span>Drag & drop media or click to upload</span>
+        </label>
+      </div>
+
+      @if (selectedMedia().length > 0) {
+        <div class="media-grid">
+          @for (m of selectedMedia(); track m.id) {
+            <div class="media-item">
+              <button class="remove-btn btn btn-icon" (click)="removeMedia(m.id)" title="Remove">
+                <i class="icon-x"></i>
+              </button>
+              @if (m.type === 'image') {
+                <img [src]="m.url" alt="preview">
+              } @else {
+                <video [src]="m.url" controls></video>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="composer-right">
+      <!-- Error Message -->
+      @if (error()) {
+        <div class="error-message">
+          <i class="icon-alert-circle"></i>
+          {{ error() }}
+        </div>
+      }
+
+      <div class="field">
+        <label>Caption</label>
+        <div class="input-with-counter">
+          <textarea class="input input-lg" rows="5" maxlength="2000" placeholder="Share your travel story..." [value]="caption()" (input)="caption.set($any($event.target).value)"></textarea>
+          <div class="counter">{{ charCount() }}/2000</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Hashtags</label>
+        <div class="hashtag-input">
+          <input class="input" placeholder="#add hashtag" [value]="newHashtag()" (input)="newHashtag.set($any($event.target).value)" (keyup.enter)="addHashtagFromInput()">
+          <button class="btn" (click)="addHashtagFromInput()">Add</button>
+        </div>
+        <div class="tags">
+          @for (tag of hashtags(); track tag) {
+            <span class="pill">#{{ tag }} <button class="tag-x" (click)="removeHashtag(tag)">×</button></span>
+          }
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field grow">
+          <label>Location</label>
+          <div class="location-autocomplete">
+            <div class="location-input">
+              <input
+                #locationInput
+                class="input"
+                placeholder="Search a place (e.g. Eiffel Tower, Paris)"
+                [value]="location()"
+                (input)="onLocationInputChange($any($event.target).value)"
+                (keyup.enter)="handleLocationSearch()">
+              <button
+                type="button"
+                class="btn btn-icon"
+                (click)="getCurrentLocation()"
+                [disabled]="isLoadingLocation()"
+                title="Use current location">
+                @if (isLoadingLocation()) {
+                  <i class="icon-loader"></i>
+                } @else {
+                  <i class="icon-map-pin"></i>
+                }
+              </button>
+              @if (locationCoords()) {
+                <button
+                  type="button"
+                  class="btn btn-icon btn-clear"
+                  (click)="clearLocation()"
+                  title="Clear location">
+                  <i class="icon-x"></i>
+                </button>
+              }
+            </div>
+            @if (suggestionsOpen() && suggestions().length) {
+              <ul class="suggestions">
+                @for (s of suggestions(); track s.placeId) {
+                  <li class="suggestion-item" (click)="selectSuggestion(s)">
+                    <div class="suggestion-name">{{ s.name }}</div>
+                    <div class="suggestion-address">{{ s.formattedAddress }}</div>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+          @if (selectedPlace()) {
+            <div class="location-details">
+              <div class="location-name">📍 {{ selectedPlace()!.name }}</div>
+              <div class="location-address">{{ selectedPlace()!.formattedAddress }}</div>
+            </div>
+          } @else if (locationCoords()) {
+            <div class="hint">📍 Location: {{ locationCoords()!.lat?.toFixed(4) }}, {{ locationCoords()!.lng?.toFixed(4) }}</div>
+          }
+        </div>
+        <div class="field">
+          <label>Visibility</label>
+          <select class="input" [value]="visibility()" (change)="visibility.set($any($event.target).value)">
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" routerLink="/feed">Cancel</button>
+        <button class="btn btn-primary" [disabled]="pending() || !canPost()" (click)="submit()">
+          @if (pending()) { Posting... } @else { Post }
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

@@ -1,0 +1,269 @@
+<div class="feed-container" [class.mobile-view]="isMobile">
+  <!-- Main Feed Column -->
+  <div class="feed-main">
+    <!-- Loading State -->
+    @if (loading() && posts().length === 0) {
+      <div class="loading-state">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <h3>Loading posts...</h3>
+        </div>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (error() && posts().length === 0) {
+      <div class="error-state">
+        <div class="error-content">
+          <div class="error-icon">⚠️</div>
+          <h3>Failed to load posts</h3>
+          <p>{{ error() }}</p>
+          <button class="retry-btn" (click)="loadFeed()">Try Again</button>
+        </div>
+      </div>
+    }
+
+    <!-- Stories Section -->
+    @if (stories().length > 0) {
+      <div class="stories-container">
+        <div class="stories-scroll">
+          <!-- Your Story -->
+          <div class="story-item your-story">
+            <div class="story-avatar">
+              <img src="assets/images/avatar-placeholder.jpg" alt="Your Profile" class="avatar">
+              <div class="add-story-icon">+</div>
+            </div>
+            <span class="story-username">Your Story</span>
+          </div>
+
+          <!-- User Stories -->
+          @for (story of stories(); track story._id) {
+            <div class="story-item" (click)="viewStory(story._id)">
+              <div class="story-avatar" [class.has-story]="story.hasUnseenStory">
+                <img [src]="story.profilePic" [alt]="story.username" class="avatar">
+              </div>
+              <span class="story-username">{{ story.username | slice:0:10 }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Posts Feed -->
+    @for (post of posts(); track post._id) {
+      <div class="post-card">
+        <!-- Post Header -->
+        <div class="post-header">
+          <div class="post-user-info">
+            <div class="post-avatar">
+              <img [src]="post.profilePic" [alt]="post.username" class="avatar avatar-sm">
+            </div>
+            <div class="post-meta">
+              <div class="post-username">{{ post.username }}</div>
+              <div class="post-location">{{ post.location }}</div>
+            </div>
+          </div>
+          <button class="post-more-options">•••</button>
+        </div>
+
+        <!-- Post Image (Single or Carousel) -->
+        <div class="post-image">
+          <!-- Single Image Post -->
+          @if (post.type === 'single') {
+            <img [src]="post.imageUrl" [alt]="'Post by ' + post.username" class="post-img">
+          }
+
+          <!-- Carousel Post -->
+          @if (post.type === 'carousel') {
+            <div class="carousel-container">
+              <button class="carousel-nav carousel-prev" (click)="prevImage(post._id)">
+                <i class="icon-chevron-left"></i>
+              </button>
+
+              <img [src]="getCarouselImageUrl(post)"
+                   [alt]="'Post by ' + post.username"
+                   class="post-img">
+
+              <button class="carousel-nav carousel-next" (click)="nextImage(post._id)">
+                <i class="icon-chevron-right"></i>
+              </button>
+
+              <div class="carousel-indicators">
+                @for (i of getCarouselIndicators(post); track i) {
+                  <div class="carousel-dot" [class.active]="isActiveDot(post, i)"></div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Post Actions -->
+        <div class="post-actions">
+          <div class="post-actions-primary">
+            <button class="action-btn" [class.active]="post.liked" (click)="toggleLike(post._id)">
+              <i class="icon-heart"></i>
+            </button>
+            <button class="action-btn">
+              <i class="icon-message-circle"></i>
+            </button>
+            <button class="action-btn" (click)="sharePost(post)">
+              <i class="icon-share"></i>
+            </button>
+          </div>
+          <button class="action-btn" [class.active]="post.saved" (click)="toggleSave(post._id)">
+            <i class="icon-bookmark"></i>
+          </button>
+        </div>
+
+        <!-- Post Likes -->
+        <div class="post-likes">
+          {{ post.likes.toLocaleString() }} likes
+        </div>
+
+        <!-- Post Caption -->
+        <div class="post-caption">
+          <span class="caption-username">{{ post.username }}</span>
+          {{ post.caption }}
+        </div>
+
+        <!-- Post Comments -->
+        <div class="post-comments-link" (click)="toggleComments(post._id)">
+          @if (post.commentCount > 0) {
+            View all {{ post.commentCount }} comments
+          } @else {
+            Add a comment...
+          }
+        </div>
+
+        <!-- Comments Section -->
+        @if (showComments()[post._id]) {
+          <div class="comments-section">
+            @if (loadingComments()[post._id]) {
+              <div class="loading-comments">Loading comments...</div>
+            } @else {
+              @for (comment of comments()[post._id] || []; track comment._id) {
+                <div class="comment-item">
+                  <div class="comment-avatar">
+                    <img [src]="getCommentAvatarUrl(comment.userId)" [alt]="comment.userId.username" class="avatar avatar-sm">
+                  </div>
+                  <div class="comment-content">
+                    <div class="comment-header">
+                      <span class="comment-username">{{ comment.userId.username }}</span>
+                      <span class="comment-date">{{ formatCommentDate(comment.createdAt) }}</span>
+                    </div>
+                    <div class="comment-text">{{ comment.commentText }}</div>
+                    <div class="comment-actions">
+                      <button class="comment-action" (click)="toggleCommentLike(comment._id, post._id)">
+                        <i class="icon-heart" [class.active]="hasLikedComment(comment)"></i>
+                        @if (comment.likesCount > 0) {
+                          <span>{{ comment.likesCount }}</span>
+                        }
+                      </button>
+                      @if (canEditComment(comment)) {
+                        <button class="comment-action" (click)="deleteComment(comment._id, post._id)">
+                          <i class="icon-trash"></i>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <!-- Post Timestamp -->
+        <div class="post-timestamp">
+          {{ post.timestamp }}
+        </div>
+
+        <!-- Add Comment -->
+        <div class="post-add-comment">
+          <input
+            type="text"
+            placeholder="Add a comment..."
+            class="comment-input"
+            [value]="commentInputs()[post._id] || ''"
+            (input)="updateCommentInput(post._id, $any($event.target).value)"
+            (keyup.enter)="addComment(post._id)">
+          <button class="post-btn" (click)="addComment(post._id)" [disabled]="!commentInputs()[post._id]?.trim()">Post</button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Sidebar (Suggestions) -->
+  <div class="feed-sidebar">
+    <!-- User Profile Summary -->
+    @if (currentUser()) {
+      <div class="sidebar-profile">
+        <img [src]="getUserAvatar(currentUser())" [alt]="currentUser()?.fullName" class="avatar avatar-lg">
+        <div class="sidebar-profile-info">
+          <div class="sidebar-username">{{ currentUser()?.username }}</div>
+          <div class="sidebar-name text-muted">{{ currentUser()?.fullName }}</div>
+        </div>
+        <a routerLink="/profile" class="sidebar-switch-link">View</a>
+      </div>
+    }
+
+    <!-- Suggestions -->
+    <div class="suggestions-header">
+      <span class="text-muted">Suggestions For You</span>
+      <a href="#" class="see-all-link">See All</a>
+    </div>
+
+    <!-- Suggested Accounts -->
+    @for (account of suggestedAccounts(); track account._id) {
+      <div class="suggestion-item">
+        <div class="suggestion-profile">
+          <img [src]="account.profilePic" [alt]="account.username" class="avatar avatar-sm">
+          <div class="suggestion-info">
+            <div class="suggestion-username">{{ account.username }}</div>
+            <div class="suggestion-meta text-muted">{{ account.fullName }}</div>
+          </div>
+        </div>
+        @if (!account.followed) {
+          <button class="follow-btn" (click)="followAccount(account._id)">Follow</button>
+        } @else {
+          <span class="following-text">Following</span>
+        }
+      </div>
+    }
+
+    <!-- Trending Destinations -->
+    <div class="sidebar-section trending-destinations">
+      <h3 class="sidebar-section-title">Trending Destinations</h3>
+      <div class="trending-list">
+        <div class="trending-item">
+          <span class="trending-name">#Bali</span>
+          <span class="trending-count">24.5K posts</span>
+        </div>
+        <div class="trending-item">
+          <span class="trending-name">#NewYorkCity</span>
+          <span class="trending-count">18.3K posts</span>
+        </div>
+        <div class="trending-item">
+          <span class="trending-name">#ParisInSpring</span>
+          <span class="trending-count">12.7K posts</span>
+        </div>
+        <div class="trending-item">
+          <span class="trending-name">#RoadTrip</span>
+          <span class="trending-count">9.2K posts</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Links -->
+    <div class="sidebar-footer">
+      <div class="footer-links">
+        <a href="#" class="footer-link">About</a> •
+        <a href="#" class="footer-link">Help</a> •
+        <a href="#" class="footer-link">Privacy</a> •
+        <a href="#" class="footer-link">Terms</a>
+      </div>
+      <div class="copyright text-muted">
+        © 2025 TravelConnect
+      </div>
+    </div>
+  </div>
+</div>

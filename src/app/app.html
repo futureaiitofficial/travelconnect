@@ -1,83 +1,116 @@
-<!-- Travel Connect Main Application Layout -->
-<div class="app-container">
-  <!-- Navigation Header -->
-  <header class="app-header">
-    <div class="header-content">
-      <!-- Logo and Brand -->
-      <div class="brand">
-        <h1 class="logo">TravelConnect</h1>
+<!-- TravelConnect Main Application Layout - Modern Design -->
+<div class="app-container" [class.dark-mode]="darkMode()" [class.auth-layout]="isAuthRoute()">
+
+  <!-- Authentication Layout (Full Page) -->
+  @if (isAuthRoute()) {
+    <main class="auth-main">
+      <router-outlet></router-outlet>
+    </main>
+  } @else {
+    <!-- Main App Layout with Sidebar -->
+
+    <!-- Desktop Sidebar Navigation (hidden on mobile) -->
+    <nav class="sidebar-nav hide-on-mobile">
+      <div class="sidebar-header">
+        <a routerLink="/" class="logo">
+          <span class="logo-text">TravelConnect</span>
+        </a>
       </div>
-      
-      <!-- Navigation Menu -->
-      <nav class="nav-menu">
-        <a routerLink="/feed" routerLinkActive="active" class="nav-link">Feed</a>
-        <a routerLink="/explore" routerLinkActive="active" class="nav-link">Explore</a>
-        <a href="#" class="nav-link">Trips</a>
-        <a href="#" class="nav-link">Messages</a>
-      </nav>
-      
-      <!-- User Actions -->
-      <div class="user-actions">
-        <button class="notification-btn">
-          <span class="notification-icon">🔔</span>
-          <span class="notification-count">3</span>
+
+      <div class="sidebar-menu">
+        <a routerLink="/feed" routerLinkActive="active" class="sidebar-link">
+          <i class="icon-home"></i>
+          <span>Feed</span>
+        </a>
+        <a routerLink="/explore" routerLinkActive="active" class="sidebar-link">
+          <i class="icon-globe"></i>
+          <span>Explore Trips</span>
+        </a>
+        <a routerLink="/trips" routerLinkActive="active" class="sidebar-link">
+          <i class="icon-map"></i>
+          <span>Trips</span>
+        </a>
+        <a routerLink="/messages" routerLinkActive="active" class="sidebar-link">
+          <i class="icon-message"></i>
+          <span>Messages</span>
+        </a>
+
+        <a routerLink="/people" routerLinkActive="active" class="sidebar-link">
+          <i class="icon-users"></i>
+          <span>People Search</span>
+        </a>
+        <a routerLink="/create" routerLinkActive="active" class="sidebar-link">
+          <i class="icon-plus-square"></i>
+          <span>Create</span>
+        </a>
+        <a routerLink="/profile" routerLinkActive="active" class="sidebar-link profile-link">
+          <i class="icon-user"></i>
+          <span>Profile</span>
+        </a>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="theme-toggle" (click)="toggleTheme()">
+          <i [class]="darkMode() ? 'icon-sun' : 'icon-moon'"></i>
+          <span>{{ darkMode() ? 'Light Mode' : 'Dark Mode' }}</span>
         </button>
-        <div class="user-profile">
-          <img src="https://via.placeholder.com/40" alt="User Avatar" class="avatar">
+        @if (isAuthenticated()) {
+          <button class="sidebar-link logout-btn" (click)="logout()">
+            <i class="icon-logout"></i>
+            <span>Logout</span>
+          </button>
+        }
+        <a routerLink="/settings" class="sidebar-link">
+          <i class="icon-settings"></i>
+          <span>Settings</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Mobile Header (visible only on mobile) -->
+    <header class="mobile-header hide-on-desktop">
+      <div class="mobile-header-content">
+        <a routerLink="/" class="logo">
+          <span class="logo-text">TravelConnect</span>
+        </a>
+
+        <div class="mobile-actions">
+          <button class="icon-button">
+            <i class="icon-search"></i>
+          </button>
+
+          <button class="icon-button">
+            <i class="icon-message"></i>
+          </button>
         </div>
       </div>
-    </div>
-  </header>
-  
-  <!-- Main Content Area -->
-  <main class="main-content">
-    <!-- Router outlet for different pages -->
-    <router-outlet></router-outlet>
-    
-    <!-- Temporary welcome content until routing is set up -->
-    <div class="welcome-section">
-      <div class="welcome-content">
-        <h2>Welcome to Travel Connect</h2>
-        <p class="welcome-subtitle">Connect with fellow travelers and plan your next adventure</p>
-        
-        <div class="feature-cards">
-          <div class="feature-card">
-            <div class="feature-icon">📸</div>
-            <h3>Share Stories</h3>
-            <p>Share your travel experiences with photos and stories</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">🗺️</div>
-            <h3>Plan Trips</h3>
-            <p>Collaborate with friends to plan amazing trips</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">💬</div>
-            <h3>Connect</h3>
-            <p>Message and connect with travelers worldwide</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">🔍</div>
-            <h3>Explore</h3>
-            <p>Discover trending destinations and hidden gems</p>
-          </div>
-        </div>
-        
-        <div class="action-buttons">
-          <button class="primary-btn">Start Exploring</button>
-          <button class="secondary-btn">Create Your First Post</button>
-        </div>
-      </div>
-    </div>
-  </main>
-  
-  <!-- Footer -->
-  <footer class="app-footer">
-    <div class="footer-content">
-      <p>&copy; 2025 Travel Connect. Made with ❤️ for travelers worldwide.</p>
-    </div>
-  </footer>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+
+    <!-- Mobile Bottom Navigation (visible only on mobile) -->
+    <nav class="mobile-nav hide-on-desktop">
+      <a routerLink="/feed" routerLinkActive="active" class="nav-item">
+        <i class="icon-home"></i>
+      </a>
+      <a routerLink="/explore" routerLinkActive="active" class="nav-item">
+        <i class="icon-globe"></i>
+      </a>
+      <a routerLink="/people" routerLinkActive="active" class="nav-item">
+        <i class="icon-users"></i>
+      </a>
+      <a routerLink="/create" routerLinkActive="active" class="nav-item create-button">
+        <i class="icon-plus"></i>
+      </a>
+      <a routerLink="/trips" routerLinkActive="active" class="nav-item">
+        <i class="icon-map"></i>
+      </a>
+      <a routerLink="/profile" routerLinkActive="active" class="nav-item">
+        <i class="icon-user"></i>
+      </a>
+    </nav>
+  }
 </div>

@@ -1,0 +1,398 @@
+<!-- Modern Registration Page -->
+<div class="auth-page">
+  <div class="auth-container">
+    <!-- Brand Header -->
+    <div class="brand-header">
+      <h1 class="brand-name">TravelConnect</h1>
+      <p class="brand-tagline">Start your journey with fellow travelers</p>
+    </div>
+
+    <!-- Registration Card -->
+    <div class="auth-card">
+      <div class="auth-card-header">
+        <h2>Create Account</h2>
+        <p>Join thousands of travelers sharing their experiences</p>
+      </div>
+
+      <!-- Progress Indicator -->
+      <div class="progress-indicator">
+        <div class="progress-step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
+          <div class="step-circle">
+            @if (currentStep() > 1) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            } @else {
+              1
+            }
+          </div>
+          <span class="step-label">Personal Info</span>
+        </div>
+        <div class="progress-line" [class.completed]="currentStep() > 1"></div>
+        <div class="progress-step" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">
+          <div class="step-circle">2</div>
+          <span class="step-label">Interests</span>
+        </div>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form">
+
+        <!-- Step 1: Basic Information -->
+        @if (currentStep() === 1) {
+          <div class="form-step" [@slideIn]>
+            <!-- Name Fields -->
+            <div class="form-row">
+              <div class="form-field">
+                <label for="firstName" class="form-label">First Name</label>
+                <div class="input-wrapper">
+                  <input
+                    type="text"
+                    id="firstName"
+                    formControlName="firstName"
+                    placeholder="John"
+                    class="form-input"
+                    [class.error]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched"
+                  />
+                  <div class="input-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                </div>
+                @if (getFieldError('firstName')) {
+                  <div class="field-error">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    {{ getFieldError('firstName') }}
+                  </div>
+                }
+              </div>
+
+              <div class="form-field">
+                <label for="lastName" class="form-label">Last Name</label>
+                <div class="input-wrapper">
+                  <input
+                    type="text"
+                    id="lastName"
+                    formControlName="lastName"
+                    placeholder="Doe"
+                    class="form-input"
+                    [class.error]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched"
+                  />
+                </div>
+                @if (getFieldError('lastName')) {
+                  <div class="field-error">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    {{ getFieldError('lastName') }}
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Username -->
+            <div class="form-field">
+              <label for="username" class="form-label">Username</label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  id="username"
+                  formControlName="username"
+                  placeholder="johndoe_traveler"
+                  class="form-input"
+                  [class.error]="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
+                />
+                <div class="input-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 12a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM12 14v7"></path>
+                  </svg>
+                </div>
+              </div>
+              @if (getFieldError('username')) {
+                <div class="field-error">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ getFieldError('username') }}
+                </div>
+              }
+            </div>
+
+            <!-- Email -->
+            <div class="form-field">
+              <label for="email" class="form-label">Email Address</label>
+              <div class="input-wrapper">
+                <input
+                  type="email"
+                  id="email"
+                  formControlName="email"
+                  placeholder="john@example.com"
+                  class="form-input"
+                  [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
+                />
+                <div class="input-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                </div>
+              </div>
+              @if (getFieldError('email')) {
+                <div class="field-error">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ getFieldError('email') }}
+                </div>
+              }
+            </div>
+
+            <!-- Password -->
+            <div class="form-field">
+              <label for="password" class="form-label">Password</label>
+              <div class="input-wrapper">
+                <input
+                  [type]="showPassword() ? 'text' : 'password'"
+                  id="password"
+                  formControlName="password"
+                  placeholder="Create a strong password"
+                  class="form-input"
+                  [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
+                />
+                <button
+                  type="button"
+                  class="input-action"
+                  (click)="togglePassword()"
+                  title="Toggle password visibility"
+                >
+                  @if (showPassword()) {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  } @else {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  }
+                </button>
+              </div>
+              @if (getFieldError('password')) {
+                <div class="field-error">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ getFieldError('password') }}
+                </div>
+              }
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-field">
+              <label for="confirmPassword" class="form-label">Confirm Password</label>
+              <div class="input-wrapper">
+                <input
+                  [type]="showConfirmPassword() ? 'text' : 'password'"
+                  id="confirmPassword"
+                  formControlName="confirmPassword"
+                  placeholder="Confirm your password"
+                  class="form-input"
+                  [class.error]="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched"
+                />
+                <button
+                  type="button"
+                  class="input-action"
+                  (click)="toggleConfirmPassword()"
+                  title="Toggle password visibility"
+                >
+                  @if (showConfirmPassword()) {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  } @else {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  }
+                </button>
+              </div>
+              @if (getFieldError('confirmPassword')) {
+                <div class="field-error">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ getFieldError('confirmPassword') }}
+                </div>
+              }
+            </div>
+
+            <!-- Next Button -->
+            <button type="button" class="auth-button" (click)="nextStep()" [disabled]="!isStep1Valid()">
+              <span>Continue</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        }
+
+        <!-- Step 2: Interests & Bio -->
+        @if (currentStep() === 2) {
+          <div class="form-step" [@slideIn]>
+            <!-- Bio -->
+            <div class="form-field">
+              <label for="bio" class="form-label">Tell us about yourself</label>
+              <div class="input-wrapper">
+                <textarea
+                  id="bio"
+                  formControlName="bio"
+                  placeholder="Share your travel style, favorite destinations, or what makes you excited about exploring..."
+                  class="form-textarea"
+                  rows="4"
+                  [class.error]="registerForm.get('bio')?.invalid && registerForm.get('bio')?.touched"
+                ></textarea>
+              </div>
+              @if (getFieldError('bio')) {
+                <div class="field-error">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ getFieldError('bio') }}
+                </div>
+              }
+            </div>
+
+            <!-- Interests Selection -->
+            <div class="interests-section">
+              <h3 class="interests-title">What interests you?</h3>
+              <p class="interests-subtitle">Select your travel interests to connect with like-minded travelers</p>
+
+              <div class="interests-grid">
+                @for (interest of availableInterests; track interest) {
+                  <button
+                    type="button"
+                    class="interest-chip"
+                    [class.selected]="isInterestSelected(interest)"
+                    (click)="toggleInterest(interest)"
+                  >
+                    <span>{{ interest }}</span>
+                    @if (isInterestSelected(interest)) {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="terms-section">
+              <label class="checkbox-wrapper">
+                <input type="checkbox" formControlName="agreeToTerms" />
+                <span class="checkbox-checkmark"></span>
+                <span class="checkbox-label">
+                  I agree to TravelConnect's <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a>
+                </span>
+              </label>
+              @if (getFieldError('agreeToTerms')) {
+                <div class="field-error">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  {{ getFieldError('agreeToTerms') }}
+                </div>
+              }
+            </div>
+
+            <!-- Error Message -->
+            @if (errorMessage()) {
+              <div class="auth-error">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                {{ errorMessage() }}
+              </div>
+            }
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+              <button type="button" class="auth-button-secondary" (click)="previousStep()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Back</span>
+              </button>
+              <button
+                type="submit"
+                class="auth-button"
+                [disabled]="registerForm.invalid || isLoading()"
+                [class.loading]="isLoading()"
+              >
+                @if (isLoading()) {
+                  <div class="button-spinner"></div>
+                  <span>Creating account...</span>
+                } @else {
+                  <span>Create Account</span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </form>
+
+      <!-- Sign In Link -->
+      <div class="auth-switch">
+        <p>Already have an account?</p>
+        <a routerLink="/login" class="switch-link">
+          Sign in here
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="7" y1="17" x2="17" y2="7"></line>
+            <polyline points="7 7 17 7 17 17"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+      <p>&copy; 2024 TravelConnect. Made with ❤️ for travelers worldwide.</p>
+    </div>
+  </div>
+
+  <!-- Background Elements -->
+  <div class="bg-elements">
+    <div class="bg-circle bg-circle-1"></div>
+    <div class="bg-circle bg-circle-2"></div>
+    <div class="bg-circle bg-circle-3"></div>
+  </div>
+</div>

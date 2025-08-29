@@ -1,0 +1,86 @@
+<div class="settings-container settings-layout">
+  <!-- Sidebar -->
+  <aside class="settings-sidebar card">
+    <h2>Settings</h2>
+    <nav class="settings-nav">
+      @for (t of tabs; track t) {
+        <button class="nav-item" [class.active]="activeTab() === t" (click)="setTab(t)">
+          <span>{{ t }}</span>
+          <i class="icon-chevron-right"></i>
+        </button>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <a class="btn btn-ghost" routerLink="/profile">Back to profile</a>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <section class="settings-panel card">
+    @if (activeTab() === 'Account') {
+      <h3>Account</h3>
+      <div class="grid">
+        <div class="field">
+          <label>Display name</label>
+          <input class="input" [value]="displayName()" (input)="displayName.set($any($event.target).value)">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input class="input" type="email" [value]="email()" (input)="email.set($any($event.target).value)">
+        </div>
+      </div>
+    } @else if (activeTab() === 'Security') {
+      <h3>Security</h3>
+      <div class="switches">
+        <label class="switch"><input type="checkbox" [checked]="twoFactor()" (change)="twoFactor.set($any($event.target).checked)"> Two-factor authentication</label>
+        <label class="switch"><input type="checkbox" [checked]="loginAlerts()" (change)="loginAlerts.set($any($event.target).checked)"> Login alerts</label>
+      </div>
+      <div class="divider"></div>
+      <h4>Change password</h4>
+      <div class="grid">
+        <div class="field"><label>Current password</label><input class="input" type="password" [value]="currentPassword()" (input)="currentPassword.set($any($event.target).value)"></div>
+        <div class="field"><label>New password</label><input class="input" type="password" [value]="newPassword()" (input)="newPassword.set($any($event.target).value)"></div>
+        <div class="field"><label>Confirm new password</label><input class="input" type="password" [value]="confirmPassword()" (input)="confirmPassword.set($any($event.target).value)"></div>
+      </div>
+      @if (passwordMessage()) { <p class="hint">{{ passwordMessage() }}</p> }
+      <div class="actions-row">
+        <button class="btn btn-primary" [disabled]="passwordSaving()" (click)="changePassword()">@if (passwordSaving()) { Saving... } @else { Update password }</button>
+      </div>
+
+    } @else if (activeTab() === 'Privacy') {
+      <h3>Privacy</h3>
+      <div class="switches">
+        <label class="switch"><input type="checkbox" [checked]="isPrivate()" (change)="isPrivate.set($any($event.target).checked)"> Private account</label>
+        <label class="switch"><input type="checkbox" [checked]="showOnline()" (change)="showOnline.set($any($event.target).checked)"> Show online status</label>
+        <label class="switch"><input type="checkbox" [checked]="allowRequests()" (change)="allowRequests.set($any($event.target).checked)"> Allow join requests</label>
+      </div>
+    } @else if (activeTab() === 'Appearance') {
+      <h3>Appearance</h3>
+      <div class="grid">
+        <div class="field">
+          <label>Theme</label>
+          <select class="input" [value]="theme()" (change)="theme.set($any($event.target).value)">
+            <option value="system">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Density</label>
+          <label class="switch"><input type="checkbox" [checked]="compactMode()" (change)="compactMode.set($any($event.target).checked)"> Compact mode</label>
+        </div>
+      </div>
+    } @else {
+      <h3>Sessions</h3>
+      <p class="hint">Active sessions shown here (device, IP, last active). For demo purposes, this is placeholder content.</p>
+      <div class="actions-row"><button class="btn btn-ghost">Log out all sessions</button></div>
+    }
+
+    <div class="footer-actions">
+      <button class="btn btn-primary" (click)="saveAll()">Save settings</button>
+    </div>
+  </section>
+</div>
+
+

@@ -2,12 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Travelconnect</title>
+  <title>TravelConnect - Social Network for Travelers</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Connect with fellow travelers, share experiences, plan trips together, and discover amazing destinations with TravelConnect.">
+  <meta name="theme-color" content="#0095f6">
+
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- Preconnect to Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Fonts - Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
 </head>
 <body>
   <app-root></app-root>
+
+  <!-- Initialize Feather Icons -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace();
+    });
+  </script>
 </body>
 </html>

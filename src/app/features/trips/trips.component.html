@@ -1,0 +1,480 @@
+<!-- Hero Section -->
+<div class="hero-section">
+  <div class="hero-background">
+    <div class="hero-overlay"></div>
+    <div class="hero-particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-text">
+      <h1 class="hero-title">My Adventures</h1>
+      <p class="hero-subtitle">Discover, plan, and share your extraordinary journeys</p>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-number">{{ trips().length }}</span>
+          <span class="stat-label">Trips</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ upcomingTrips().length }}</span>
+          <span class="stat-label">Upcoming</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ pastTrips().length }}</span>
+          <span class="stat-label">Completed</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{ requestedTrips().length }}</span>
+          <span class="stat-label">Requested</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <button class="primary-cta" (click)="openCreateModal()">
+        <i class="icon-plus"></i>
+        <span>Create New Trip</span>
+        <div class="cta-glow"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="trips-container">
+  <!-- Control Bar -->
+  <div class="control-bar">
+    <div class="filter-tabs">
+      <button
+        class="filter-tab"
+        [class.active]="activeTab() === 'all'"
+        (click)="setActiveTab('all')">
+        <span>All</span>
+        <span class="tab-count">{{ trips().length }}</span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="activeTab() === 'upcoming'"
+        (click)="setActiveTab('upcoming')">
+        <span>Upcoming</span>
+        <span class="tab-count">{{ upcomingTrips().length }}</span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="activeTab() === 'past'"
+        (click)="setActiveTab('past')">
+        <span>Past</span>
+        <span class="tab-count">{{ pastTrips().length }}</span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="activeTab() === 'requested'"
+        (click)="setActiveTab('requested')">
+        <span>Requested</span>
+        <span class="tab-count">{{ requestedTrips().length }}</span>
+      </button>
+    </div>
+
+    <div class="view-controls">
+      <button class="view-toggle" [class.active]="viewMode() === 'grid'" (click)="viewMode() === 'list' ? toggleViewMode() : null">
+        <i class="icon-grid"></i>
+      </button>
+      <button class="view-toggle" [class.active]="viewMode() === 'list'" (click)="viewMode() === 'grid' ? toggleViewMode() : null">
+        <i class="icon-list"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Trips Display -->
+  <div class="trips-display" [class.grid-layout]="viewMode() === 'grid'" [class.list-layout]="viewMode() === 'list'">
+    @if (displayedTrips().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <i class="icon-compass"></i>
+        </div>
+        <h3 class="empty-title">No {{ activeTab() === 'all' ? '' : activeTab() }} trips yet</h3>
+        <p class="empty-description">
+          @if (activeTab() === 'requested') {
+            You haven't requested to join any trips yet. Explore public trips and request to join exciting adventures!
+          } @else {
+            Your {{ activeTab() === 'all' ? 'journey' : activeTab() + ' adventures' }} await. Start planning your next unforgettable experience.
+          }
+        </p>
+        @if (activeTab() === 'requested') {
+          <button class="empty-cta" routerLink="/explore">
+            <i class="icon-compass"></i>
+            Explore Trips
+          </button>
+        } @else {
+          <button class="empty-cta" (click)="openCreateModal()">
+            <i class="icon-plus"></i>
+            Plan Your First Trip
+          </button>
+        }
+      </div>
+    } @else {
+      @for (trip of displayedTrips(); track trip.id) {
+        <div class="trip-item" [class.featured]="$index === 0">
+          <div class="trip-visual" [class.no-image]="!hasCoverImage(trip)">
+            @if (hasCoverImage(trip)) {
+              <img [src]="getCoverImage(trip)" [alt]="trip.tripName || trip.title" class="trip-image">
+            } @else {
+              <div class="gradient-background">
+                <div class="trip-name-overlay">{{ trip.tripName || trip.title }}</div>
+              </div>
+            }
+            <div class="trip-overlay">
+              <div class="overlay-content">
+                @if (activeTab() === 'requested') {
+                  <div class="trip-status requested">
+                    <i class="icon-clock"></i>
+                    <span>Request Pending</span>
+                  </div>
+                } @else {
+                  <div class="trip-status" [class.public]="trip.isPublic" [class.private]="!trip.isPublic">
+                    <i [class]="trip.isPublic ? 'icon-globe' : 'icon-lock'"></i>
+                    <span>{{ trip.isPublic ? 'Public' : 'Private' }}</span>
+                  </div>
+                }
+                <div class="quick-actions">
+                  <button class="quick-action" [routerLink]="['/trips', trip._id || trip.id]" title="View Trip">
+                    <i class="icon-eye"></i>
+                  </button>
+                  @if (activeTab() === 'requested') {
+                    <button class="quick-action danger" (click)="cancelJoinRequest(trip._id || trip.id)" title="Cancel Request">
+                      <i class="icon-x"></i>
+                    </button>
+                  } @else {
+                    <button class="quick-action" [routerLink]="['/trips', trip._id || trip.id, 'edit']" title="Edit Trip">
+                      <i class="icon-edit"></i>
+                    </button>
+                    <button class="quick-action danger" (click)="deleteTrip(trip._id || trip.id)" title="Delete Trip">
+                      <i class="icon-trash"></i>
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="trip-gradient"></div>
+          </div>
+
+          <div class="trip-info">
+            <div class="trip-header">
+              <h3 class="trip-name">{{ trip.tripName || trip.title }}</h3>
+              <div class="trip-location">
+                <i class="icon-map-pin"></i>
+                <span>{{ trip.destination }}</span>
+              </div>
+            </div>
+
+            <div class="trip-timeline">
+              <div class="timeline-item">
+                <i class="icon-calendar"></i>
+                <div class="timeline-content">
+                  <span class="timeline-label">Duration</span>
+                  <span class="timeline-value">{{ trip.startDate | date:'MMM d' }} - {{ trip.endDate | date:'MMM d, y' }}</span>
+                </div>
+              </div>
+            </div>
+
+            @if (viewMode() === 'list' && trip.description) {
+              <p class="trip-description">{{ trip.description }}</p>
+            }
+
+            <div class="trip-metrics">
+              <div class="metric">
+                <div class="metric-icon">
+                  <i class="icon-route"></i>
+                </div>
+                <div class="metric-content">
+                  <span class="metric-value">{{ trip.itinerary?.length || 0 }}</span>
+                  <span class="metric-label">Activities</span>
+                </div>
+              </div>
+              <div class="metric">
+                <div class="metric-icon">
+                  <i class="icon-checklist"></i>
+                </div>
+                <div class="metric-content">
+                  <span class="metric-value">{{ getCompletedTasksCount(trip) }}/{{ trip.checklist?.length || 0 }}</span>
+                  <span class="metric-label">Tasks</span>
+                </div>
+              </div>
+              @if (trip.collaborators && trip.collaborators.length > 0) {
+                <div class="metric">
+                  <div class="metric-icon">
+                    <i class="icon-users"></i>
+                  </div>
+                  <div class="metric-content">
+                    <span class="metric-value">{{ trip.collaborators.length }}</span>
+                    <span class="metric-label">Members</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (trip.collaborators && trip.collaborators.length > 0) {
+              <div class="trip-members">
+                <div class="members-avatars">
+                  @for (member of trip.collaborators.slice(0, 4); track member.id) {
+                    <div class="member-avatar" [title]="member.username">
+                      <img [src]="member.profilePic || 'assets/images/avatars/user.svg'" [alt]="member.username">
+                    </div>
+                  }
+                  @if (trip.collaborators.length > 4) {
+                    <div class="members-overflow">
+                      <span>+{{ trip.collaborators.length - 4 }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Enhanced Create Trip Modal -->
+<div class="modal-overlay" [class.active]="modalOpen()" (click)="closeCreateModal()">
+  <div class="create-trip-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <h2>Create New Adventure</h2>
+        <p>Plan your next unforgettable journey</p>
+      </div>
+      <button class="modal-close" (click)="closeCreateModal()">
+        <i class="icon-x"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form (submit)="$event.preventDefault(); submitCreateTrip();">
+        <div class="form-section">
+          <div class="form-group">
+            <label for="tripTitle">Trip Name</label>
+            <input
+              type="text"
+              id="tripTitle"
+              placeholder="e.g., Tokyo Cherry Blossom Adventure"
+              [value]="newTripTitle()"
+              (input)="newTripTitle.set($any($event.target).value)"
+              required>
+          </div>
+
+                    <div class="form-group">
+            <label for="tripDestination">Destination</label>
+            <div class="autocomplete-wrapper" [class.place-selected]="selectedDestinationPlace()">
+              <input
+                type="text"
+                id="tripDestination"
+                placeholder="Where are you going?"
+                [value]="newTripDestination()"
+                (input)="onDestinationInputChange($any($event.target).value)"
+                [class.has-selection]="selectedDestinationPlace()"
+                required>
+
+              <!-- Selected place indicator -->
+              @if (selectedDestinationPlace()) {
+                <div class="selected-place-indicator">
+                  <div class="selected-place-info">
+                    <i class="icon-check-circle"></i>
+                    <span class="selected-label">Selected:</span>
+                    <span class="selected-name">{{ selectedDestinationPlace()!.name }}</span>
+                  </div>
+                  <button type="button" class="clear-selection" (click)="clearDestinationSelection()" title="Clear selection">
+                    <i class="icon-x"></i>
+                  </button>
+                </div>
+              } @else {
+                <i class="input-icon icon-map-pin"></i>
+              }
+
+              @if (destSuggestOpen() && destSuggestions().length) {
+                <ul class="autocomplete-dropdown">
+                  @for (suggestion of destSuggestions(); track suggestion.placeId) {
+                    <li class="suggestion-item" (click)="selectDestinationSuggestion(suggestion)">
+                      <div class="suggestion-main">{{ suggestion.name }}</div>
+                      <div class="suggestion-sub">{{ suggestion.formattedAddress }}</div>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+
+            <!-- Validation message -->
+            @if (newTripDestination() && !selectedDestinationPlace()) {
+              <div class="validation-hint">
+                <i class="icon-info"></i>
+                <span>Please select a destination from the suggestions for better accuracy</span>
+              </div>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate">Start Date</label>
+              <input
+                type="date"
+                id="startDate"
+                [value]="newTripStartDate()"
+                (input)="newTripStartDate.set($any($event.target).value)"
+                required>
+            </div>
+            <div class="form-group">
+              <label for="endDate">End Date</label>
+              <input
+                type="date"
+                id="endDate"
+                [value]="newTripEndDate()"
+                (input)="newTripEndDate.set($any($event.target).value)"
+                required>
+            </div>
+          </div>
+
+                    <div class="form-group">
+            <label for="tripDescription">Description</label>
+            <textarea
+              id="tripDescription"
+              placeholder="Share what makes this trip special..."
+              rows="3"
+              [value]="newTripDescription()"
+              (input)="newTripDescription.set($any($event.target).value)"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="tripType">Trip Type *</label>
+            <div class="trip-type-selector">
+              @if (tripConstants()) {
+                @for (type of tripConstants()!.tripTypes; track type) {
+                  <button
+                    type="button"
+                    class="trip-type-option"
+                    [class.selected]="newTripType() === type"
+                    (click)="newTripType.set(type)">
+                    <div class="trip-type-icon">
+                      @switch (type) {
+                        @case ('solo') {
+                          <i class="icon-user"></i>
+                        }
+                        @case ('couple') {
+                          <i class="icon-heart"></i>
+                        }
+                        @case ('group') {
+                          <i class="icon-users"></i>
+                        }
+                        @case ('family') {
+                          <i class="icon-home"></i>
+                        }
+                      }
+                    </div>
+                    <span class="trip-type-label">{{ type | titlecase }}</span>
+                  </button>
+                }
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Interests (Choose up to 5)</label>
+            <div class="interests-selector">
+              @if (tripConstants()) {
+                @for (interest of tripConstants()!.interests; track interest) {
+                  <button
+                    type="button"
+                    class="interest-tag"
+                    [class.selected]="isInterestSelected(interest)"
+                    [disabled]="!isInterestSelected(interest) && !canAddMoreInterests()"
+                    (click)="toggleInterest(interest)">
+                    {{ formatInterestDisplay(interest) }}
+                  </button>
+                }
+              }
+              <div class="interests-counter">{{ newTripInterests().length }}/5 selected</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="coverImageInput">Cover Image (Optional)</label>
+            <div class="cover-image-upload">
+              @if (coverImagePreview()) {
+                <div class="image-preview-container">
+                  <img [src]="coverImagePreview()!" alt="Cover preview" class="cover-preview">
+                  <div class="image-overlay">
+                    <button type="button" class="change-image-btn" (click)="triggerFileInput()">
+                      <i class="icon-camera"></i>
+                      <span>Change Image</span>
+                    </button>
+                    <button type="button" class="remove-image-btn" (click)="removeCoverImage()">
+                      <i class="icon-trash"></i>
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="upload-placeholder" (click)="triggerFileInput()">
+                  <div class="upload-content">
+                    <i class="icon-image"></i>
+                    <h4>Add Cover Image</h4>
+                    <p>Upload a beautiful image to showcase your trip</p>
+                    <span class="upload-hint">JPG, PNG up to 5MB</span>
+                  </div>
+                </div>
+              }
+              <input
+                type="file"
+                id="coverImageInput"
+                accept="image/*"
+                (change)="onCoverImageSelected($event)"
+                style="display: none;">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="maxMembers">Group Size</label>
+              <div class="number-input">
+                <input
+                  type="number"
+                  id="maxMembers"
+                  min="1"
+                  max="50"
+                  [value]="newTripMaxMembers()"
+                  (input)="newTripMaxMembers.set(+$any($event.target).value)"
+                  required>
+                <span class="input-suffix">people</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="toggle-label">
+                <input
+                  type="checkbox"
+                  [checked]="newTripIsPublic()"
+                  (change)="newTripIsPublic.set($any($event.target).checked)">
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">Make Public</span>
+              </label>
+              <p class="form-hint">Public trips can be discovered by other travelers</p>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeCreateModal()">Cancel</button>
+      <button class="btn-primary" (click)="submitCreateTrip()" [disabled]="loading()">
+        @if (loading()) {
+          <i class="icon-loader spinning"></i>
+          <span>Creating...</span>
+        } @else {
+          <i class="icon-plus"></i>
+          <span>Create Trip</span>
+        }
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,303 @@
+<div class="trip-explorer-container">
+  <!-- Header Section -->
+  <div class="explorer-header">
+    <div class="header-title">
+      <h1>Discover Trips</h1>
+      <p>Find and join trips from travelers around the world</p>
+    </div>
+
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-section">
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <i class="icon-search"></i>
+        <input
+          type="text"
+          placeholder="Search destinations, cities, countries..."
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          class="search-input">
+
+        <!-- Search Suggestions -->
+        @if (showSuggestions() && searchSuggestions().length > 0) {
+          <div class="search-suggestions">
+            @for (place of searchSuggestions(); track place.placeId) {
+              <div class="suggestion-item" (click)="selectSuggestion(place)">
+                <i class="icon-map-pin"></i>
+                <div class="suggestion-text">
+                  <div class="suggestion-name">{{ place.name }}</div>
+                  <div class="suggestion-address">{{ place.formattedAddress }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <button class="search-btn btn btn-primary" (click)="searchTrips(searchQuery())">
+        Search
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="explorer-content">
+    <!-- Filters Panel -->
+    <div class="filters-panel">
+      <h2>Filters</h2>
+      <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+        <!-- Date Range -->
+        <div class="filter-group">
+          <h3>Dates</h3>
+          <div class="date-inputs">
+            <div class="form-field">
+              <label for="startDate">From</label>
+              <input type="date" id="startDate" formControlName="startDate" class="input">
+            </div>
+            <div class="form-field">
+              <label for="endDate">To</label>
+              <input type="date" id="endDate" formControlName="endDate" class="input">
+            </div>
+          </div>
+        </div>
+
+        <!-- Trip Type -->
+        <div class="filter-group">
+          <h3>Trip Type</h3>
+          <div class="form-field">
+            <select formControlName="tripType" id="tripType" class="input">
+              <option value="">Any Type</option>
+              @for (type of tripTypes(); track type.id) {
+                <option [value]="type.id">{{ type.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- Interests -->
+        <div class="filter-group">
+          <h3>Interests</h3>
+          <div class="interests-list">
+            @for (interest of interests(); track interest.id) {
+              <div class="interest-checkbox">
+                <input
+                  type="checkbox"
+                  [id]="'interest-' + interest.id"
+                  [value]="interest.id"
+                  (change)="onInterestFilterChange(interest.id)">
+                <label [for]="'interest-' + interest.id">{{ interest.name }}</label>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Available Only -->
+        <div class="filter-group">
+          <div class="interest-checkbox">
+            <input type="checkbox" id="availableOnly" formControlName="availableOnly">
+            <label for="availableOnly">Available spots only</label>
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <button type="button" class="reset-btn btn btn-ghost" (click)="resetFilters()">Reset</button>
+          <button type="submit" class="apply-btn btn btn-primary">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-area">
+      <!-- Loading State -->
+      @if (loading()) {
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Loading trips...</p>
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (error() && !loading()) {
+        <div class="error-container">
+          <div class="error-message">
+            <h3>Error Loading Trips</h3>
+            <p>{{ error() }}</p>
+            <button class="btn btn-primary" (click)="loadPublicTrips()">Try Again</button>
+          </div>
+        </div>
+      }
+
+
+
+      <!-- Trip List -->
+      @if (!loading() && !error()) {
+        <div class="trips-list">
+          @if (filteredTrips().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="icon-map"></i>
+              </div>
+              <h3>No trips found</h3>
+              <p>Try adjusting your filters or search in a different location.</p>
+              <button class="btn btn-primary" (click)="resetFilters()">Reset Filters</button>
+            </div>
+          } @else {
+            <div class="trips-grid">
+              @for (trip of filteredTrips(); track trip._id) {
+                <div class="trip-card" [class.requested-trip]="hasRequestedToJoin(trip)" (click)="openTripDetails(trip)">
+                  <div class="trip-cover" [class.no-image]="!hasCoverImage(trip)">
+                    @if (hasCoverImage(trip)) {
+                      <img [src]="getTripCoverImage(trip)" [alt]="trip.tripName">
+                    } @else {
+                      <div class="gradient-background">
+                        <div class="trip-name-overlay">{{ trip.tripName }}</div>
+                      </div>
+                    }
+                    <div class="trip-overlay">
+                      <div class="trip-type-badge">{{ formatTripType(trip.tripType) }}</div>
+                      @if (hasRequestedToJoin(trip)) {
+                        <div class="requested-badge">Requested</div>
+                      } @else if (hasAvailableSpots(trip)) {
+                        <div class="available-badge">Available</div>
+                      } @else {
+                        <div class="full-badge">Full</div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="trip-content">
+                    <div class="trip-header">
+                      <h3 class="trip-title">{{ trip.tripName }}</h3>
+                      <p class="trip-destination">
+                        <i class="icon-map-pin"></i>
+                        {{ trip.destination }}
+                      </p>
+                    </div>
+
+                    <div class="trip-details">
+                      <div class="trip-dates">
+                        <i class="icon-calendar"></i>
+                        {{ formatDateRange(trip.startDate, trip.endDate) }}
+                      </div>
+                      <div class="trip-members">
+                        <i class="icon-users"></i>
+                        {{ getMemberCountText(trip) }}
+                      </div>
+                    </div>
+
+                    @if (trip.description) {
+                      <p class="trip-description">{{ trip.description }}</p>
+                    }
+
+                    @if (trip.interests && trip.interests.length > 0) {
+                      <div class="trip-interests">
+                        @for (interest of trip.interests.slice(0, 3); track interest) {
+                          <span class="interest-tag">{{ formatInterestName(interest) }}</span>
+                        }
+                        @if (trip.interests.length > 3) {
+                          <span class="interest-tag">+{{ trip.interests.length - 3 }} more</span>
+                        }
+                      </div>
+                    }
+
+                    <div class="trip-creator">
+                      <img [src]="getCreatorProfilePic(trip)" [alt]="trip.createdBy?.fullName" class="creator-avatar">
+                      <span class="creator-name">by {{ trip.createdBy?.fullName || trip.createdBy?.username }}</span>
+                    </div>
+
+                    <div class="trip-actions">
+                      <button class="btn btn-primary" (click)="openTripDetails(trip); $event.stopPropagation()">
+                        View Details
+                      </button>
+                      @if (hasAvailableSpots(trip)) {
+                        @if (hasRequestedToJoin(trip)) {
+                          <button class="btn btn-disabled" disabled>
+                            <i class="icon-clock"></i> Requested
+                          </button>
+                        } @else {
+                          <button class="btn" (click)="requestJoinTrip(trip); $event.stopPropagation()">
+                            Request to Join
+                          </button>
+                        }
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Join Request Modal -->
+  @if (isJoinRequestOpen()) {
+    <div class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Request to Join Trip</h3>
+          <button class="close-btn" (click)="closeJoinRequestModal()">
+            <i class="icon-x"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p>You are requesting to join <strong>{{ selectedTrip()?.tripName }}</strong></p>
+
+          <div class="form-group">
+            <label for="requestMessage">Message to Trip Organizer (Optional)</label>
+            <textarea
+              id="requestMessage"
+              [value]="joinRequestMessage()"
+              (input)="onJoinMessageInput($event)"
+              placeholder="Introduce yourself and explain why you'd like to join this trip..."
+              rows="5"
+              class="form-control">
+            </textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="closeJoinRequestModal()">Cancel</button>
+          <button class="btn btn-primary" (click)="submitJoinRequest()" [disabled]="joinRequestInProgress()">
+            @if (joinRequestInProgress()) {
+              <span class="loading-spinner-sm"></span> Sending...
+            } @else {
+              Send Request
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Join Request Status Modal -->
+  @if (joinRequestSent()) {
+    <div class="modal-overlay">
+      <div class="modal-container status-modal">
+        <div class="modal-header">
+          <h3>Join Request Sent</h3>
+          <button class="close-btn" (click)="closeJoinStatusModal()">
+            <i class="icon-x"></i>
+          </button>
+        </div>
+
+        <div class="modal-body text-center">
+          <div class="status-icon success">
+            <i class="icon-check"></i>
+          </div>
+          <p>Your request to join <strong>{{ joinRequestTripName() }}</strong> has been sent to the trip organizer.</p>
+          <p>You'll be notified when they respond to your request.</p>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-primary" (click)="closeJoinStatusModal()">OK</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
